@@ -10,6 +10,31 @@ npx skills add https://github.com/agnt5dev/skills
 
 You'll be prompted to select which skills to install, which agents to target, and the installation scope.
 
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `-g, --global` | Install to user directory instead of project |
+| `-a, --agent <agents...>` | Target specific agents (e.g., `claude-code`, `codex`). See [Available Agents](https://github.com/anthropics/claude-code) |
+| `-s, --skill <skills...>` | Install specific skills by name (use `'*'` for all skills) |
+| `-l, --list` | List available skills without installing |
+| `--copy` | Copy files instead of symlinking to agent directories |
+| `-y, --yes` | Skip all confirmation prompts |
+| `--all` | Install all skills to all agents without prompts |
+
+**Examples:**
+
+```bash
+# Install a specific skill to Claude Code only
+npx skills add https://github.com/agnt5dev/skills -s agnt5-ai-templates -a claude-code
+
+# Install all skills globally without prompts
+npx skills add https://github.com/agnt5dev/skills --all -g
+
+# List available skills without installing
+npx skills add https://github.com/agnt5dev/skills --list
+```
+
 ## Available Skills
 
 | Skill | Description |

@@ -46,7 +46,7 @@ description = "<one-line description>"
 requires-python = ">=3.11"
 
 dependencies = [
-    "agnt5>=0.4.2a2",
+    "agnt5>=0.7.2",
     "requests>=2.31.0",
     "beautifulsoup4>=4.12.0",
     "python-dotenv>=1.2.1",

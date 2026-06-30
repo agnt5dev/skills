@@ -8,6 +8,12 @@ A collection of [skills](https://github.com/anthropics/claude-code) for AI codin
 npx skills add https://github.com/agnt5dev/skills
 ```
 
+To install all skills to Claude Code only, without prompts:
+
+```bash
+npx skills add https://github.com/agnt5dev/skills -s '*' -a claude-code -y
+```
+
 You'll be prompted to select which skills to install, which agents to target, and the installation scope.
 
 ### Options

@@ -1,17 +1,19 @@
 ---
 name: agnt5-ai-templates
-description: Generate AGNT5 workflow templates from a blueprint description. Use when the user asks to create a new AGNT5 template, scaffold a new agent workflow, or build a new worker project with agents, functions, and workflows.
+description: Generate AGNT5 workflow templates from a blueprint description. Use when the user asks to create a new AGNT5 template, scaffold a new agent workflow, or build a new worker project with agents, functions, and workflows in Python, TypeScript, or Go.
 ---
 
 # AGNT5 Template Generation Guide
 
 This file is a skill reference for Claude Code. When asked to create a new AGNT5 template, follow this guide precisely — **do not ask the user to point at a reference template again**.
 
+AGNT5 supports three languages: **Python** (primary), **TypeScript**, and **Go**. Default to Python unless the user specifies otherwise.
+
 ---
 
 ## Template Directory Structure
 
-Every template lives in its own directory at the root of this repo:
+### Python
 
 ```
 <template-name>/
@@ -25,30 +27,60 @@ Every template lives in its own directory at the root of this repo:
         ├── __init__.py             # Package exports
         ├── agents.py               # Agent definitions
         ├── workflows.py            # Workflow definition(s)
-        ├── functions.py            # Stage functions
-        └── tools.py                # Custom tools (if needed)
+        ├── functions.py            # Stage functions (only if needed)
+        └── tools.py                # Custom tools (only if needed)
 ```
 
 - **Package name** = template name in snake_case (e.g. `blog_creation`)
-- **Template directory name** = template name in snake_case (e.g. `blog_creation`)
+- **Template directory name** = template name in snake_case
+
+### TypeScript
+
+```
+<template-name>/
+├── app.ts                          # Worker entry point (required)
+├── package.json                    # Node project & dependencies (required)
+├── tsconfig.json                   # TypeScript config (required)
+├── agnt5.yaml                      # AGNT5 worker config (required)
+├── .env.example                    # Environment variable template (required)
+├── README.md                       # Usage docs (required)
+└── src/
+    ├── agents.ts                   # Agent definitions
+    ├── functions.ts                # Step functions
+    └── workflows.ts                # Workflow definitions
+```
+
+### Go
+
+```
+<template-name>/
+├── main.go                         # Worker entry point (required)
+├── go.mod                          # Go module (required)
+├── agnt5.yaml                      # AGNT5 worker config (required)
+├── .env.example                    # Environment variable template (required)
+└── README.md                       # Usage docs (required)
+```
 
 ---
 
 ## Key Files — Boilerplate & Patterns
 
-### `pyproject.toml`
+### `pyproject.toml` (Python)
+
+> The `agnt5` version below is a snapshot and will go stale. Before scaffolding, check the
+> latest published version (`pip index versions agnt5` or the PyPI page) and use that instead
+> of trusting this number.
 
 ```toml
 [project]
 name = "<template-name>-agnt5"
 version = "1.0.0"
 description = "<one-line description>"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 
 dependencies = [
-    "agnt5>=0.7.2",
+    "agnt5~=0.8.7",
     "requests>=2.31.0",
-    "beautifulsoup4>=4.12.0",
     "python-dotenv>=1.2.1",
 ]
 
@@ -68,19 +100,95 @@ line-length = 100
 
 [tool.ruff]
 line-length = 100
-target-version = "py311"
+target-version = "py312"
 ```
 
-### `agnt5.yaml`
+### `agnt5.yaml` (Python)
 
 ```yaml
-name: agnt5-<template-name>
+name: <template-name>
 language: python
-language_version: "3.11"
-environment: development
-variables: {}
+language_version: "3.12"
+environment: dev
+
+deploy:
+  resources:
+    memory: 512Mi
+    cpu: 500m
+```
+
+### `agnt5.yaml` (TypeScript)
+
+```yaml
+name: <template-name>
+language: typescript
+language_version: "22"
+environment: dev
+
 worker:
-  command: "uv run --no-sync python app.py"
+  command: "npx tsx app.ts"
+
+deploy:
+  resources:
+    memory: 512Mi
+    cpu: 500m
+```
+
+### `agnt5.yaml` (Go)
+
+```yaml
+name: <template-name>
+language: go
+language_version: "1.23"
+environment: dev
+
+worker:
+  command: "go run ."
+
+deploy:
+  resources:
+    memory: 512Mi
+    cpu: 500m
+```
+
+### `package.json` (TypeScript)
+
+> The `@agnt5/sdk` version below is a snapshot and will go stale. Before scaffolding, check
+> the latest published version (`npm view @agnt5/sdk version`) and use that instead of
+> trusting this number.
+
+```json
+{
+  "name": "<template-name>",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "npx tsx app.ts"
+  },
+  "dependencies": {
+    "@agnt5/sdk": "^0.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
+  }
+}
+```
+
+### `go.mod` (Go)
+
+> The `agnt5.dev/sdk-go` version below is a snapshot and will go stale. Before scaffolding,
+> check the latest published version (`go list -m -versions agnt5.dev/sdk-go`) and use that
+> instead of trusting this number.
+
+```
+module <template-name>
+
+go 1.23.1
+
+require agnt5.dev/sdk-go v0.1.0
 ```
 
 ### `.env.example`
@@ -90,30 +198,124 @@ worker:
 # Copy to .env and fill in your values
 
 OPENAI_API_KEY="your-openai-api-key-here"
-
 ```
 
 ---
 
-## Tool Definition Pattern (`tools.py`)
+## Tool Definition Pattern (`tools.py` — Python only)
 
 > Only create this file if agents need to call external APIs or perform actions outside their built-in knowledge. If no tools are needed, omit this file entirely.
 
 ```python
-from agnt5 import tool, Context
+from agnt5.tool import tool
+from agnt5.context import Context
 
-@tool(auto_schema=True)
+@tool
 async def my_tool(ctx: Context, param: str) -> str:
-    """One-line description of what this tool does."""
+    """One-line description of what this tool does.
+
+    Args:
+        param: Description of the parameter.
+    """
     # implementation
     return result
 
 __all__ = ["my_tool"]
 ```
 
+`@tool` decorator options:
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `name` | `str` | function's `__name__` | How the tool appears to the model |
+| `description` | `str` | first line of docstring | What the model reads to decide when to call this tool |
+
+- First parameter must be `ctx: Context` — injected automatically, not exposed to the model.
+- Every other parameter becomes a field the model can fill in. Type hints and docstring `Args:` descriptions build the JSON schema.
+- Sync functions are wrapped in a thread pool automatically.
+
+### Built-in Tools (Python — no `tools.py` needed)
+
+Built-in tools run on the provider's infrastructure. Use `built_in_tools=` on the agent (NOT `tools=`):
+
+```python
+from agnt5 import Agent
+from agnt5.lm import BuiltInTool
+
+agent = Agent(
+    name="researcher",
+    model="openai/gpt-4o-mini",
+    instructions=(
+        "You are a research assistant. Always use web search to find current "
+        "information, never answer from training knowledge alone."
+    ),
+    built_in_tools=[BuiltInTool.WEB_SEARCH],
+)
+```
+
+Available built-in tools:
+
+| Tool | What it does | Provider |
+|---|---|---|
+| `BuiltInTool.WEB_SEARCH` | Live web search with cited results | OpenAI, Anthropic |
+| `BuiltInTool.CODE_INTERPRETER` | Run code in a provider-hosted sandbox | OpenAI only |
+| `BuiltInTool.FILE_SEARCH` | Search over files uploaded to the provider | OpenAI only |
+| `BuiltInTool.WEB_FETCH` | Fetch the content of a specific URL | Anthropic only |
+
+You can mix `built_in_tools` with custom `tools` and a `sandbox` on the same agent:
+
+```python
+from agnt5 import Agent, Sandbox
+from agnt5.lm import BuiltInTool
+
+agent = Agent(
+    name="assistant",
+    model="openai/gpt-4o-mini",
+    instructions="Search the web for information and run code when needed.",
+    built_in_tools=[BuiltInTool.WEB_SEARCH, BuiltInTool.CODE_INTERPRETER],
+    sandbox=Sandbox(),
+)
+```
+
+### MCP Tools (Python — no `tools.py` needed)
+
+Use `MCPClient` when a tool already exists in an external MCP server:
+
+```python
+from agnt5 import Agent
+from agnt5.mcp import MCPClient
+
+mcp = MCPClient(id="repo-tools")
+mcp.add_streamable_http_server("deepwiki", "https://mcp.deepwiki.com/mcp")
+await mcp.connect()
+
+agent = Agent(
+    name="repository_researcher",
+    model="openai/gpt-4o-mini",
+    instructions="Use available tools to answer questions about code repositories.",
+    tools=mcp.get_tools(),
+)
+```
+
+### Agents as Tools (Python)
+
+Pass another `Agent` directly in `tools`. The calling agent invokes it like any tool and gets the specialist's response back:
+
+```python
+lookup_agent = Agent(name="lookup", model="openai/gpt-4o-mini", instructions="...")
+orchestrator = Agent(
+    name="orchestrator",
+    model="openai/gpt-4o-mini",
+    instructions="Use lookup to find information, then summarize it.",
+    tools=[lookup_agent],   # auto-wrapped as ask_lookup
+)
+```
+
 ---
 
-## Agent Definition Pattern (`agents.py`)
+## Agent Definition Pattern
+
+### Python (`agents.py`)
 
 ```python
 from agnt5 import Agent
@@ -133,7 +335,7 @@ Always start your response with "LABEL:" …"""
 
 my_agent = Agent(
     name="AgentName",
-    model="openai/gpt-4o-mini",   # or "anthropic/claude-haiku-4-5-20251001"
+    model="openai/gpt-4o-mini",
     instructions=agent_prompt,
     tools=[some_tool],            # omit if no tools needed
     max_tokens=8192,
@@ -144,22 +346,43 @@ my_agent = Agent(
 __all__ = ["my_agent"]
 ```
 
-**Model options:**
-| Model string | Use case |
-|---|---|
-| `openai/gpt-4o-mini` | Default — fast and cheap |
-| `anthropic/claude-haiku-4-5-20251001` | Claude — fast |
-| `anthropic/claude-sonnet-4-6` | Claude — balanced quality |
-| `anthropic/claude-opus-4-6` | Claude — highest quality |
-| `deepseek/deepseek-chat` | DeepSeek — fast and cheap (use when user requests DeepSeek) |
-| `deepseek/deepseek-reasoner` | DeepSeek — chain-of-thought reasoning, ideal for math/science/coding |
-| `mistral/mistral-small-latest` | Mistral — fast and efficient (use when user requests Mistral) |
-| `openrouter/openai/gpt-4o-mini` | OpenRouter — routes to GPT-4o-mini (use when user requests OpenRouter) |
-| `xai/grok-beta` | xAI Grok — general purpose (use when user requests xAI or Grok) |
-| `xai/grok-2` | xAI Grok 2 — higher capability (use when user requests xAI or Grok with quality priority) |
-| `groq/llama-3.3-70b-versatile` | Groq — ultra-fast inference (use when user requests Groq) |
-| `google/gemini-2.0-flash` | Google Gemini — fast and cost-effective (use when user requests Google or Gemini) |
-| `google/gemini-1.5-pro` | Google Gemini — higher capability (use when user requests Gemini with quality priority) |
+### TypeScript (`agents.ts`)
+
+```typescript
+import { Agent, LM } from '@agnt5/sdk';
+
+export const myAgent = new Agent({
+    name: 'AgentName',
+    model: LM.openai(),
+    modelName: 'openai/gpt-4o-mini',
+    instructions: 'You are <AgentName>, <one-line role>...',
+});
+```
+
+### Go (`main.go` — agents are inline)
+
+Go agents are constructed inline in function/workflow handlers:
+
+```go
+import "agnt5.dev/sdk-go/agnt5"
+
+agent := agnt5.NewAgent("agent_name",
+    agnt5.WithModel("openai/gpt-4o-mini"),
+    agnt5.WithInstructions("You are..."),
+)
+result, err := agent.Run(ctx, input)
+```
+
+**Model string format:** `"<provider>/<model-name>"`, e.g. `openai/gpt-4o-mini` (default),
+`anthropic/claude-3-5-sonnet-20241022`. Specific model names change often — do not hardcode a
+menu of them here; ask the user which model they want, or use the provider's current default
+naming, and verify against the provider's own docs if unsure.
+
+Provider prefixes with first-class Studio credential support: `openai`, `anthropic`, `google`
+(or `gemini`), `groq`, `openrouter`, `mistral`, `deepseek`, `xai`. The SDK also accepts
+`azure`, `bedrock`, `fireworks`, `together`, `huggingface` (or `hf`), and `ollama` for
+local/advanced use — see https://agnt5.com/docs/integrations/ai-providers for the current
+provider table and required API key env var per provider.
 
 ---
 
@@ -185,11 +408,10 @@ coordinator_agent = Agent(
 )
 ```
 
-### Advanced usage — `Handoff` / `handoff()` for custom config
+### Advanced usage — `handoff()` for custom config
 
 ```python
 from agnt5 import Agent, handoff
-# or: from agnt5.agent.handoff import Handoff
 
 research_agent = Agent(name="researcher", model="openai/gpt-4o-mini", instructions="...")
 writer_agent   = Agent(name="writer",     model="openai/gpt-4o-mini", instructions="...")
@@ -206,7 +428,7 @@ coordinator_agent = Agent(
 )
 ```
 
-**`handoff()` / `Handoff` parameters:**
+**`handoff()` parameters:**
 
 | Parameter | Default | Description |
 |---|---|---|
@@ -217,7 +439,7 @@ coordinator_agent = Agent(
 
 ### When to use handoffs vs. workflow stages
 
-| Use handoffs when… | Use workflow stages (`@function`) when… |
+| Use handoffs when… | Use workflow stages when… |
 |---|---|
 | A coordinator agent decides at runtime which specialist to call | The sequence of agents is fixed and known upfront |
 | Different request types need completely different specialists | Each stage always runs in order |
@@ -225,7 +447,9 @@ coordinator_agent = Agent(
 
 ---
 
-## Function (Stage) Definition Pattern (`functions.py`)
+## Function (Stage) Definition Pattern
+
+### Python (`functions.py`)
 
 ```python
 from agnt5 import function, FunctionContext
@@ -236,7 +460,7 @@ async def my_stage(ctx: FunctionContext, input_data: str) -> str:
     """One-line description of what this stage does."""
     ctx.logger.info("Stage started")
 
-    result = await my_agent.run_sync(input_data, context=ctx)
+    result = await my_agent.run(input_data, context=ctx)
 
     output = result.output
     if output.strip().startswith("LABEL:"):
@@ -248,9 +472,7 @@ async def my_stage(ctx: FunctionContext, input_data: str) -> str:
 __all__ = ["my_stage"]
 ```
 
-### Streaming `@function`
-
-If a stage needs to stream output chunk by chunk (e.g. token streaming, progress updates), use `yield` instead of `return`. The platform forwards each yielded chunk to the client in real time.
+### Streaming `@function` (Python)
 
 ```python
 from agnt5 import function, FunctionContext
@@ -263,11 +485,37 @@ async def stream_stage(ctx: FunctionContext, input_data: str):
         yield word + " "
 ```
 
-> **Use streaming only when the caller needs real-time chunks.** For most templates a regular `return` is simpler and sufficient. The workflow's `_consume_streaming_result` automatically collects all chunks and assembles the final output when used inside `ctx.step()`.
+> Use streaming only when the caller needs real-time chunks. For most templates a regular `return` is simpler and sufficient.
+
+### TypeScript (`functions.ts`)
+
+```typescript
+import { fn } from '@agnt5/sdk';
+import type { Context } from '@agnt5/sdk';
+
+export const myStage = fn('my_stage').run(
+    async (ctx: Context, input: { data: string }): Promise<{ result: string }> => {
+        ctx.logger.info('Stage started');
+        // implementation
+        return { result: 'output' };
+    },
+);
+```
+
+### Go (inline in `main.go`)
+
+```go
+agnt5.RegisterFunction(worker, "my_stage", func(ctx *agnt5.Context, in MyInput) (MyOutput, error) {
+    ctx.Logger().Info("stage started", "input", in)
+    return MyOutput{Result: "output"}, nil
+})
+```
 
 ---
 
-## Workflow Definition Pattern (`workflows.py`)
+## Workflow Definition Pattern
+
+### Python (`workflows.py`)
 
 > **Default: no HITL.** Build fully autonomous workflows unless the user explicitly asks for human review steps.
 
@@ -282,10 +530,10 @@ async def my_workflow(
 ) -> dict:
     """Docstring describing the stages."""
     # Stage 1
-    result1 = await ctx.task(stage1, message)
+    result1 = await ctx.step(stage1, message)
 
     # Stage 2
-    result2 = await ctx.task(stage2, message, result1)
+    result2 = await ctx.step(stage2, message, result1)
 
     return {
         "status": "completed",
@@ -295,9 +543,51 @@ async def my_workflow(
 __all__ = ["my_workflow"]
 ```
 
-### HITL — only when the user asks for it
+> **Note:** `ctx.task()` is **deprecated** — always use `ctx.step()`.
+
+### TypeScript (`workflows.ts`)
+
+```typescript
+import { workflow } from '@agnt5/sdk';
+import type { Context } from '@agnt5/sdk';
+import { stage1, stage2 } from './functions.js';
+
+export const myWorkflow = workflow(
+    'my_workflow',
+    async (ctx: Context, input: { message: string }) => {
+        const result1 = await stage1(ctx, { data: input.message });
+        const result2 = await stage2(ctx, { data: result1.result });
+        return { status: 'completed', output: result2.result };
+    },
+);
+```
+
+### Go (inline in `main.go`)
+
+```go
+agnt5.RegisterWorkflow(worker, "my_workflow", func(ctx *agnt5.Context, in MyInput) (MyOutput, error) {
+    result, err := agnt5.Step(ctx, "step_name", func(context.Context) (string, error) {
+        return "output", nil
+    })
+    if err != nil {
+        return MyOutput{}, err
+    }
+    return MyOutput{Result: result}, nil
+})
+```
+
+`agnt5.Step` is the Go equivalent of `ctx.step()` — it checkpoints the return value so a worker restart skips completed steps.
+
+### HITL — only when the user asks for it (Python)
 
 If the user explicitly requests human-in-the-loop review steps, use `ctx.wait_for_user()`.
+
+> **Replay safety:** when `ctx.wait_for_user()` is called, the workflow pauses and saves
+> state. When the user responds, AGNT5 re-runs the workflow function **from the top** — every
+> line before the pause executes again, but `wait_for_user()` now returns the saved answer
+> immediately instead of pausing. **Wrap any side effect that runs before a pause** (sending a
+> notification, calling an external API, logging) in `if not ctx._is_replay:` so it only fires
+> once. Never guard the `wait_for_user()` call itself — it must run on both passes.
 
 #### All `input_type` values
 
@@ -359,7 +649,6 @@ channels = await ctx.wait_for_user(
         {"id": "sms",    "label": "SMS"},
     ],
 )
-# channels → list of selected ids e.g. ["email", "slack"]
 ```
 
 **Select with `allow_custom`:**
@@ -371,11 +660,11 @@ language = await ctx.wait_for_user(
         {"id": "python", "label": "Python"},
         {"id": "go",     "label": "Go"},
     ],
-    allow_custom=True,   # user can type any value not in the list
+    allow_custom=True,
 )
 ```
 
-**Skippable input (returns `None` if skipped):**
+**Skippable input:**
 ```python
 notes = await ctx.wait_for_user(
     question="Additional notes? (optional)",
@@ -383,7 +672,7 @@ notes = await ctx.wait_for_user(
     skippable=True,
 )
 if notes is None:
-    notes = ""   # handle skip
+    notes = ""
 ```
 
 **Approve/edit/reject gate:**
@@ -408,24 +697,7 @@ if decision == "edit":
     )
 ```
 
-**Conditional HITL — only pause when a condition is met:**
-```python
-if amount >= 1000:
-    decision = await ctx.wait_for_user(
-        question=f"Approve expense of ${amount:.2f}?",
-        input_type="approval",
-        options=[
-            {"id": "approve", "label": "Approve"},
-            {"id": "reject",  "label": "Reject"},
-        ],
-    )
-    if decision != "approve":
-        return {"status": "rejected", "amount": amount}
-```
-
 **Multi-step HITL with `ctx.state`:**
-
-Use `ctx.state` to persist values across multiple HITL pauses in the same workflow:
 
 ```python
 name = await ctx.wait_for_user(question="What is your name?", input_type="text")
@@ -441,13 +713,12 @@ role = await ctx.wait_for_user(
 )
 ctx.state.set("role", role)
 
-# Retrieve later
 saved_name = ctx.state.get("user_name")
 ```
 
-#### Agent-level HITL tools
+#### Agent-level HITL tools (Python)
 
-Instead of pausing the workflow, agents can ask questions or request approval **mid-run** using built-in tools. Pass them via `tools=[]` when building the agent inside the workflow (they need the live `ctx`):
+Agents can ask questions or request approval **mid-run** using built-in tools. Instantiate inside the `@workflow` function (they need the live `ctx`):
 
 ```python
 from agnt5.tool import AskUserTool, RequestApprovalTool
@@ -461,7 +732,7 @@ async def my_workflow(ctx: WorkflowContext, task: str) -> dict:
         tools=[AskUserTool(ctx), RequestApprovalTool(ctx)],
         max_iterations=10,
     )
-    result = await agent.run_sync(task, context=ctx)
+    result = await agent.run(task, context=ctx)
     return {"output": result.output}
 ```
 
@@ -470,22 +741,17 @@ async def my_workflow(ctx: WorkflowContext, task: str) -> dict:
 | `AskUserTool(ctx)` | Agent asks the user a clarifying question and waits for a text reply |
 | `RequestApprovalTool(ctx)` | Agent describes an action and waits for approve/reject before proceeding |
 
-> **Important:** Always instantiate these tools inside the `@workflow` function, not at module level, because they require the live `WorkflowContext`.
-
+> **Always instantiate these tools inside the `@workflow` function**, not at module level.
 
 ---
 
-## Parallel Processing Pattern (`workflows.py`)
+## Parallel Processing Pattern (Python `workflows.py`)
 
 > **Default: sequential.** Use parallel patterns only when stages are independent and can run concurrently.
-
-All three methods live on `WorkflowContext` (`ctx`).
 
 ### `ctx.parallel(*tasks)` — small fan-out, positional results
 
 ```python
-from agnt5 import workflow, WorkflowContext
-
 @workflow
 async def my_workflow(ctx: WorkflowContext, data: str) -> dict:
     result_a, result_b = await ctx.parallel(
@@ -494,8 +760,6 @@ async def my_workflow(ctx: WorkflowContext, data: str) -> dict:
     )
     return {"a": result_a, "b": result_b}
 ```
-
-Returns a list in the same order as the inputs. Use when you have a small, fixed number of independent stages.
 
 ### `ctx.gather(**tasks)` — named fan-out
 
@@ -507,28 +771,22 @@ results = await ctx.gather(
 # Access by name: results["research"], results["outline"]
 ```
 
-Returns a `dict[name → result]`. Prefer over `parallel()` when you want self-documenting named results.
-
 ### `ctx.batch(func, items, max_concurrency=10)` — large-scale, controlled concurrency
 
-Use when you need to run the same `@function` over many items. The platform manages concurrency, retries, and observability.
-
 ```python
-from agnt5 import workflow, WorkflowContext
-
 @workflow
 async def batch_workflow(ctx: WorkflowContext, doc_ids: list) -> dict:
     result = await ctx.batch(
-        process_document,                          # must be a @function
+        process_document,
         [{"doc_id": d} for d in doc_ids],
         max_concurrency=20,
-        continue_on_failure=True,                  # keep going if some items fail
-        timeout_per_item=30.0,                     # seconds per item (optional)
+        continue_on_failure=True,
+        timeout_per_item=30.0,
     )
     return {
         "completed": result.stats.completed_items,
         "failed": result.stats.failed_items,
-        "outputs": result.outputs,                 # list sorted by original index
+        "outputs": result.outputs,
     }
 ```
 
@@ -542,9 +800,7 @@ async def batch_workflow(ctx: WorkflowContext, doc_ids: list) -> dict:
 | `result.stats.failed_items` | Count of failures |
 | `result.status` | `"completed"`, `"partial_failure"`, or `"failed"` |
 
-### `ctx.map(func, items, max_concurrency=10)` — batch, outputs only
-
-Thin wrapper over `batch()` with `continue_on_failure=False`. Raises `BatchError` if any item fails.
+### `ctx.map(func, items, max_concurrency=10)` — batch, fail-fast
 
 ```python
 outputs = await ctx.map(
@@ -552,10 +808,18 @@ outputs = await ctx.map(
     [{"id": i} for i in ids],
     max_concurrency=10,
 )
-# outputs[i] corresponds to ids[i]
 ```
 
-### When to use which
+### TypeScript parallel patterns
+
+```typescript
+// Promise.all for concurrent steps
+const results = await Promise.all(
+    items.map((item) => myStep(ctx, { item })),
+);
+```
+
+### When to use which (Python)
 
 | Method | Use when… |
 |---|---|
@@ -564,11 +828,39 @@ outputs = await ctx.map(
 | `ctx.batch()` | Many items (10+), need concurrency control and per-item error handling |
 | `ctx.map()` | Like `batch()` but you only need the outputs and want to fail-fast |
 
-> **Note:** `ctx.task()` is **deprecated** — use `ctx.step()` instead.
+---
+
+## Memory Service (Python)
+
+AGNT5 provides two memory types for agents that need to retain information:
+
+### Working Memory — ephemeral, within a run
+
+```python
+from agnt5.memory import WorkingMemory
+
+memory = WorkingMemory()
+memory.add("key", "value")
+value = memory.get("key")
+```
+
+### Semantic Memory — persistent, vector-based, across runs
+
+```python
+from agnt5.memory import SemanticMemory
+
+memory = SemanticMemory()
+await memory.store("some fact or document chunk")
+results = await memory.search("query", top_k=5)
+```
+
+Pass memory to an agent via `tools` or `memory=` parameter when building the agent.
 
 ---
 
-## Worker Entry Point (`app.py`)
+## Worker Entry Point
+
+### Python (`app.py`)
 
 ```python
 #!/usr/bin/env python3
@@ -614,13 +906,113 @@ if __name__ == "__main__":
     sys.exit(asyncio.run(main()))
 ```
 
+### TypeScript (`app.ts`)
+
+```typescript
+import { Worker } from '@agnt5/sdk';
+
+// Importing the modules registers their functions/workflows via decorators.
+import './src/functions.js';
+import './src/workflows.js';
+
+async function main() {
+    const coordinatorEndpoint =
+        process.env.AGNT5_COORDINATOR_ENDPOINT || 'http://localhost:34180';
+
+    const worker = new Worker('<template-name>', {
+        serviceVersion: '0.1.0',
+        coordinatorEndpoint,
+    });
+
+    await worker.run();
+}
+
+main().catch((error) => {
+    console.error('Worker error:', error);
+    process.exit(1);
+});
+```
+
+### Go (`main.go`)
+
+```go
+package main
+
+import (
+    "context"
+    "log"
+
+    "agnt5.dev/sdk-go/agnt5"
+)
+
+type MyInput struct {
+    Message string `json:"message"`
+}
+
+type MyOutput struct {
+    Result string `json:"result"`
+}
+
+func main() {
+    worker := agnt5.NewWorker("<template-name>",
+        agnt5.WithMaxConcurrency(16),
+    )
+
+    err := agnt5.RegisterFunction(worker, "my_function", func(ctx *agnt5.Context, in MyInput) (MyOutput, error) {
+        ctx.Logger().Info("running function", "message", in.Message)
+        return MyOutput{Result: in.Message}, nil
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    err = agnt5.RegisterWorkflow(worker, "my_workflow", func(ctx *agnt5.Context, in MyInput) (MyOutput, error) {
+        result, err := agnt5.Step(ctx, "process", func(context.Context) (string, error) {
+            return in.Message, nil
+        })
+        if err != nil {
+            return MyOutput{}, err
+        }
+        return MyOutput{Result: result}, nil
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    if err := worker.Run(context.Background()); err != nil {
+        log.Fatal(err)
+    }
+}
+```
+
+---
+
+## Available Templates (Reference)
+
+AGNT5 ships ready-made templates you can scaffold directly instead of hand-writing every file
+from a blueprint, when the blueprint closely matches an existing one:
+
+```bash
+agnt5 create --template <language>/<template-name> <project-name>
+# e.g. agnt5 create --template python/weather-agent my-weather-agent
+```
+
+The list of available templates and their current versions changes over time — do not
+hardcode it here. Check the current set with `agnt5 create --template` (no value, to list
+options) or https://agnt5.com/docs/quickstart and the templates section of the docs site
+before recommending one by name. Use the from-scratch blueprint workflow in this skill when
+no existing template is a close match, or when the user wants a custom combination of agents/
+tools/workflows.
+
 ---
 
 ## Step-by-Step: Creating a New Template
 
 Given a blueprint description, follow these steps in order:
 
-1. **Parse the blueprint** — identify:
+1. **Choose the language** — default Python unless the user specifies TypeScript or Go.
+
+2. **Parse the blueprint** — identify:
    - Number and names of agents
    - Workflow stages and their order
    - Required tools (research? web fetch? custom?)
@@ -628,64 +1020,92 @@ Given a blueprint description, follow these steps in order:
    - HITL checkpoints — **only if the user explicitly requests human review steps**
    - Handoff pattern — **only if a coordinator/router agent dispatches to specialists at runtime**
 
-2. **Create the directory** — `<template-name>/` at the repo root
+3. **Create the directory** — `<template-name>/` at the repo root
 
-3. **Write files in this order:**
+4. **Write files in order:**
+
+   **Python:**
    1. `src/<package>/tools.py` — tools first (agents depend on them)
    2. `src/<package>/agents.py` — one `Agent()` per blueprint agent
-   3. `src/<package>/functions.py` — one `@function` per workflow stage **only if the workflow has distinct stages that benefit from separate functions**; skip this file if the workflow is simple enough to call agents directly
+   3. `src/<package>/functions.py` — only if the workflow has distinct processing stages
    4. `src/<package>/workflows.py` — the `@workflow` (autonomous by default; add HITL only if requested)
    5. `src/<package>/__init__.py` — re-export everything
    6. `app.py` — `Worker(...)` with all components
    7. `pyproject.toml`, `agnt5.yaml`, `.env.example`, `README.md`
 
-4. **Naming conventions:**
+   **TypeScript:**
+   1. `src/agents.ts` — agent definitions
+   2. `src/functions.ts` — step functions using `fn('name').run(...)`
+   3. `src/workflows.ts` — workflows using `workflow('name', ...)`
+   4. `app.ts` — `Worker` entry point, imports modules to register them
+   5. `package.json`, `tsconfig.json`, `agnt5.yaml`, `.env.example`, `README.md`
+
+   **Go:**
+   1. `main.go` — all-in-one: `agnt5.NewWorker`, `agnt5.RegisterFunction`, `agnt5.RegisterWorkflow`, `worker.Run`
+   2. `go.mod`, `agnt5.yaml`, `.env.example`, `README.md`
+
+5. **Naming conventions (Python):**
    - Agent class names: `PascalCase` (e.g. `BlogCreationManager`)
    - Agent instance variables: `snake_case_agent` (e.g. `blog_manager_agent`)
    - Function names: `verb_noun` (e.g. `research_topic`, `create_outline`)
    - Workflow name: `<template_name>_workflow`
 
-5. **Tool rules:**
-   - **Do not create `tools.py` or any `@tool` definitions by default.** Only add tools if agents genuinely need to call external APIs, search the web, fetch URLs, or perform actions outside their built-in knowledge.
-   - If no tools are needed, omit `tools.py` entirely and remove it from `app.py` and `__init__.py`.
-   - Do not pass an empty `tools=[]` to `Agent()` — omit the argument entirely when there are no tools.
+6. **Tool rules (Python):**
+   - **Do not create `tools.py` by default.** Only add if agents need to call external APIs that aren't covered by built-in or MCP tools.
+   - For web search / URL fetching: use `built_in_tools=[BuiltInTool.WEB_SEARCH]` or `BuiltInTool.WEB_FETCH` — no custom code needed.
+   - For external MCP servers: use `MCPClient` and pass `mcp.get_tools()` to `tools=`.
+   - Omit `tools.py` entirely and remove from `app.py` and `__init__.py` if not needed.
+   - Do not pass an empty `tools=[]` to `Agent()` — omit the argument entirely.
+   - `built_in_tools=` and `tools=` are separate parameters — do not confuse them.
 
-6. **Handoff rules:**
-   - **Do not add handoffs by default.** Only use handoffs when the blueprint explicitly calls for a coordinator/router pattern where an LLM decides at runtime which specialist agent to call.
-   - Pass the target agent directly to `handoffs=[agent]` for simple cases; use `handoff(agent, description="…")` when you need a custom description or tool name.
-   - Do not use handoffs just to chain agents in a fixed sequence — use `@function` stages in a `@workflow` for that.
-   - Agents that receive handoffs do not need to be listed in the coordinator's `tools=[]`; handoffs are a separate mechanism.
+7. **Handoff rules (Python):**
+   - **Do not add handoffs by default.** Only use for coordinator/router LLM-dispatched patterns.
+   - Pass agent directly to `handoffs=[agent]` for simple cases; use `handoff(agent, description="…")` for custom description.
+   - Do not use handoffs for fixed-sequence chaining — use `@function` stages instead.
 
-7. **Function rules:**
-   - **Do not create `functions.py` or `@function` stages by default.** Only add them if the workflow has genuinely distinct processing stages that need to run as separate tasks.
-   - A single-agent or simple linear workflow does not need wrapper functions — call the agent directly from the workflow.
-   - If `functions.py` is not needed, omit it entirely (do not create the file) and remove it from `app.py` and `__init__.py`.
+8. **Function rules:**
+   - **Python:** Do not create `functions.py` by default. Only add for genuinely distinct processing stages. A simple linear workflow can call agents directly from the workflow.
+   - **TypeScript:** Functions (`fn(...)`) are the standard way to define steps — always create them.
+   - **Go:** Register functions inline in `main.go` via `agnt5.RegisterFunction`.
 
-8. **HITL rules:**
-   - **Do not add HITL by default.** Workflows should run fully autonomously unless the user explicitly asks for human review steps.
-   - Choose the right `input_type`: `"approval"` for yes/no gates, `"select"` for single choice, `"multiselect"` for multiple choice, `"text"` for free-form input.
-   - Add `skippable=True` when the step is optional; always handle the `None` return.
-   - Add `allow_custom=True` to `select`/`multiselect` when the user may need a value not in the list.
-   - For conditional HITL, wrap `ctx.wait_for_user()` in a Python `if` — only pause when the condition is met.
-   - For multi-step HITL, use `ctx.state.set()`/`ctx.state.get()` to pass values between pauses.
-   - For agent-level HITL (agent asks questions mid-run), use `AskUserTool(ctx)` and/or `RequestApprovalTool(ctx)` from `agnt5.tool` — always instantiate inside the `@workflow` function, not at module level.
-   - Always handle all outcomes: approve → continue, edit → collect text + continue, reject → return early with `"status": "rejected"`.
+9. **HITL rules (Python):**
+   - **Do not add HITL by default.** Only when user explicitly asks.
+   - Choose the right `input_type`; handle all outcomes; use `ctx.state` for multi-step HITL.
+   - For agent-level HITL, use `AskUserTool(ctx)` / `RequestApprovalTool(ctx)` instantiated inside `@workflow`.
 
-9. **Model selection:**
-   - Default to `openai/gpt-4o-mini` (matches existing templates)
-   - Switch to Claude models only if the blueprint specifies it or the user asks
-   - Switch to DeepSeek models if the user requests DeepSeek: use `deepseek/deepseek-chat` for general tasks and `deepseek/deepseek-reasoner` for reasoning-heavy stages (math, science, coding)
-   - When using DeepSeek, set `.env.example` to `DEEPSEEK_API_KEY` instead of `OPENAI_API_KEY`
-   - Switch to Mistral models if the user requests Mistral: use `mistral/mistral-small-latest` as the model string
-   - When using Mistral, set `.env.example` to `MISTRAL_API_KEY` instead of `OPENAI_API_KEY`
-   - Switch to OpenRouter if the user requests OpenRouter: use `openrouter/<provider>/<model>` (e.g. `openrouter/openai/gpt-4o-mini`)
-   - When using OpenRouter, set `.env.example` to `OPENROUTER_API_KEY` instead of `OPENAI_API_KEY`
-   - Switch to xAI models if the user requests xAI or Grok: use `xai/grok-beta` for general tasks or `xai/grok-2` for higher quality
-   - When using xAI, set `.env.example` to `XAI_API_KEY` instead of `OPENAI_API_KEY`
-   - Switch to Groq if the user requests Groq: use `groq/llama-3.3-70b-versatile` as the model string
-   - When using Groq, set `.env.example` to `GROQ_API_KEY` instead of `OPENAI_API_KEY`
-   - Switch to Google Gemini if the user requests Google or Gemini: use `google/gemini-2.0-flash` for speed
-   - When using Google, set `.env.example` to `GOOGLE_API_KEY` instead of `OPENAI_API_KEY`
+10. **Model selection:**
+    - Default to `openai/gpt-4o-mini` for all languages
+    - Switch providers only when the user requests it
+    - Update `.env.example` with the correct API key name for the chosen provider:
+      - Claude → `ANTHROPIC_API_KEY`
+      - DeepSeek → `DEEPSEEK_API_KEY`
+      - Mistral → `MISTRAL_API_KEY`
+      - OpenRouter → `OPENROUTER_API_KEY`
+      - xAI → `XAI_API_KEY`
+      - Groq → `GROQ_API_KEY`
+      - Google → `GOOGLE_API_KEY`
+      - Azure → `AZURE_OPENAI_API_KEY` + `AZURE_OPENAI_ENDPOINT`
+      - Bedrock → `AWS_ACCESS_KEY_ID` + `AWS_SECRET_ACCESS_KEY`
+      - Fireworks → `FIREWORKS_API_KEY`
+      - Together → `TOGETHER_API_KEY`
+      - Hugging Face → `HUGGINGFACE_API_KEY`
+      - Ollama → no key needed (local)
 
 ---
 
+## Source
+
+- https://agnt5.com/docs/build/agents -- `Agent(...)`, `run()`/`stream()`, handoffs,
+  agents-as-tools.
+- https://agnt5.com/docs/build/tools -- `@tool`, built-in tools, MCP tools, HITL tools.
+- https://agnt5.com/docs/build/workflows -- `@workflow`, `ctx.step()`, parallel/gather/batch/
+  map, durable sleep, state.
+- https://agnt5.com/docs/build/functions -- `@function`, retries, backoff, timeouts.
+- https://agnt5.com/docs/build/human-in-the-loop -- `ctx.wait_for_user()`, replay safety.
+- https://agnt5.com/docs/build/mcp -- `MCPClient`/`MCPServer`.
+- https://agnt5.com/docs/integrations/ai-providers -- supported model providers and API key
+  env vars.
+- https://agnt5.com/docs/install-cli -- `agnt5 create --template ...` scaffolding command.
+
+Cross-check currency before trusting any version pin, model name, or template list above --
+those are the parts of this skill most likely to drift from the docs over time.

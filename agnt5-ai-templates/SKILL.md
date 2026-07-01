@@ -1,11 +1,15 @@
 ---
 name: agnt5-ai-templates
-description: Generate AGNT5 workflow templates from a blueprint description. Use when the user asks to create a new AGNT5 template, scaffold a new agent workflow, or build a new worker project with agents, functions, and workflows in Python, TypeScript, or Go.
+description: Generate AGNT5 workflow templates from a blueprint description. Use when the user describes specific agents, workflows, or functions to generate — not for a bare "create a new project" request with no blueprint (see agnt5-project-init for that). Covers Python, TypeScript, and Go.
 ---
 
 # AGNT5 Template Generation Guide
 
 This file is a skill reference for Claude Code. When asked to create a new AGNT5 template, follow this guide precisely — **do not ask the user to point at a reference template again**.
+
+If the user just wants a blank/empty project with no described agents or workflows, use
+the `agnt5-project-init` skill instead — it covers `agnt5 create`/`agnt5 init` without a
+blueprint.
 
 AGNT5 supports three languages: **Python** (primary), **TypeScript**, and **Go**. Default to Python unless the user specifies otherwise.
 

@@ -74,6 +74,9 @@ Skip if the project was already scaffolded with `agnt5 create --template ...` or
 into `agnt5.yaml`. `agnt5 init` (alias `agnt5 link`) sets up the **current directory**; run
 again with no name to relink, or `agnt5 init --project <project-id>` to bind to a specific one.
 
+To create a brand-new **empty** project instead of relinking an existing one, see the
+`agnt5-project-init` skill (`agnt5 create <name>` or `agnt5 init --new --name <name>`).
+
 ## 4. Start the worker
 
 ```bash

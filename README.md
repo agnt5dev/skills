@@ -49,6 +49,7 @@ Skills are grouped by the AGNT5 lifecycle: **build** it, **run** it, **improve**
 
 | Skill | Description |
 |-------|-------------|
+| `agnt5-project-init` | Create a brand-new, empty AGNT5 project from scratch (no blueprint or template) and authenticate the CLI. |
 | `agnt5-ai-templates` | Generate AGNT5 workflow templates from a blueprint description. Scaffolds new agent workflows, workers, functions, and pipelines. |
 | `agnt5-workflows` | Define functions (retries/backoff/timeouts) and durable workflows: checkpointed steps, parallel fan-out, durable sleep, state, and event/webhook triggers. |
 | `agnt5-agents-tools` | Configure agents and the tools they call: custom tools, built-in provider tools, MCP, sandboxes, and multi-agent patterns. |
@@ -75,11 +76,19 @@ Skills are grouped by the AGNT5 lifecycle: **build** it, **run** it, **improve**
 | `agnt5-online-evals` | Sample and score production runs asynchronously, with alerting on quality drops. |
 | `agnt5-quality-cases` | Track a regression or production issue through a structured lifecycle to a verified fix. |
 
+### Write
+
+| Skill | Description |
+|-------|-------------|
+| `agnt5-blog-writing` | Write or edit a blog post for the AGNT5 blog in a voice that reads as genuinely human-written, not generic AI-blog prose. |
+
 ## Usage
 
 Once installed, invoke a skill in your agent by describing the task it handles. For example:
 
+- "Create a new empty AGNT5 project" → uses `agnt5-project-init`
 - "Create a new AGNT5 template for a document processing pipeline" → uses `agnt5-ai-templates`
 - "Set up and run this AGNT5 worker locally" → uses `agnt5-local-development`
+- "Write a blog post about our new deploy pipeline" → uses `agnt5-blog-writing`
 
 > Review skills before use — they run with full agent permissions.

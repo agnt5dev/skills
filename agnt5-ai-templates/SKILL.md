@@ -997,6 +997,7 @@ AGNT5 ships ready-made templates you can scaffold directly instead of hand-writi
 from a blueprint, when the blueprint closely matches an existing one:
 
 ```bash
+agnt5 version update   # run first, every time -- a stale CLI can mis-extract templates; no-ops if already latest
 agnt5 create --template <language>/<template-name> <project-name>
 # e.g. agnt5 create --template python/weather-agent my-weather-agent
 ```

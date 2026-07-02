@@ -5,17 +5,24 @@ description: Create a brand-new, empty AGNT5 project from scratch (no blueprint 
 
 # AGNT5 Project Init
 
-## 0. Install and authenticate the CLI (one-time, machine-wide)
+## 0. Install, update, and authenticate the CLI
 
-Skip if `agnt5 version` already succeeds and `agnt5 auth status` shows a signed-in user.
+Install is one-time, machine-wide. **Before every `agnt5 create`/`agnt5 init` run**, check the
+CLI is current and update it if not — a stale binary can carry bugs that are already fixed in
+a newer release (e.g. an outdated build has mis-extracted templates when scaffolding into the
+current directory). `agnt5 version update` is cheap and safe to run every time; don't skip it just
+because `agnt5 version` succeeds.
 
 ```bash
-curl -LsSf https://agnt5.com/cli.sh | bash    # macOS, Linux, WSL2
-brew install agnt5/tap/agnt5                  # macOS only, alternative
-agnt5 version                                 # verify
+curl -LsSf https://agnt5.com/cli.sh | bash    # macOS, Linux, WSL2 -- first-time install only
+brew install agnt5/tap/agnt5                  # macOS only, alternative first-time install
+agnt5 version                                 # check current version
+agnt5 version update                                  # run every time before create/init -- no-ops if already latest
 agnt5 auth login                              # browser OAuth, writes key to ~/.agnt5/config.yaml
 agnt5 auth status                             # confirms signed-in user + environment
 ```
+
+Skip `auth login`/`auth status` if `agnt5 auth status` already shows a signed-in user.
 
 For CI / non-interactive environments: `agnt5 auth login --api-key agnt5_sk_...` or
 `export AGNT5_API_KEY=agnt5_sk_...`.
@@ -89,6 +96,7 @@ skill for `uv sync` → `.env` setup → `agnt5 dev` to start building inside it
 | Step | Command |
 |------|---------|
 | Install CLI | `curl -LsSf https://agnt5.com/cli.sh \| bash` |
+| Update CLI (every time, before create/init) | `agnt5 version update` |
 | Authenticate | `agnt5 auth login` |
 | New dir, registered | `agnt5 create <name>` |
 | New dir, local-only | `agnt5 create <name> --local` |

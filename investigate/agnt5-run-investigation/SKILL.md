@@ -62,11 +62,30 @@ the root cause is usually lower and earlier than the loudest failure. Typical sh
 For each suspicious span note: span ID, name, duration, status, and the exact field that shows
 the problem (input, output, error message, attribute).
 
-### 3. Read the logs
+Two things to check while reading spans:
 
-Call `get_run_logs(run_id, project_id)`. Look for errors and warnings, but also for the
-application's own breadcrumbs around the divergence point (inputs it logged, branches it took,
-external responses). Page with `offset` if the first 100 rows stop before the failure.
+- **Does the error contradict the input?** If a step says "X is missing" but its
+  `input.data` contains X, or says "invalid type" for a value that looks valid, that
+  mismatch is itself a finding — the check is reading the wrong key or type.
+- **Empty trace?** If the excerpt returns `total_spans: 0`, the logs are your only source.
+  Say so in the report.
+
+### 3. Read the logs — always
+
+Call `get_run_logs(run_id, project_id)` for every investigation, not only when the trace is
+unclear. Applications often catch errors (database, auth, HTTP) and continue, so every span
+looks healthy while the logs record `*_failed` events. Tracebacks in logs give the exact file
+and line — quote them.
+
+Logs can be tens to hundreds of KB. Do not read them whole: filter to lines matching
+`error|warn|fail|exception|traceback|timeout|401|403|404|5\d\d|ENOTFOUND|refused`, plus the
+application's own event names (`*_started`, `*_completed`, `*_failed`) around the divergence
+point. Page with `offset` if the failure is past the first page.
+
+**If the run is `completed`, do not assume it succeeded.** Check the logs for failed side
+effects: HTTP 4xx/5xx on writes, `*_failed` events, "treating as cache miss", or `None`/`null`
+IDs passed into later steps. A completed run whose writes all failed is a silent failure, and
+that is the root cause to report.
 
 ### 4. Check cost and scores when relevant
 
@@ -90,6 +109,12 @@ If `get_latency_timeseries` or `get_runs_timeseries` for the component show the 
 part of a wider shift (latency jump, failure spike at the same time), say so — that points to
 an environmental cause (provider outage, deploy, dependency) rather than this run's input.
 
+**Check which deployment ran it.** The run summary has a `deployment_id`. Look it up with
+`list_deployments(project_id)`: is it the promoted deployment or a short-lived preview? Does a
+newer deployment exist? If `git_dirty` is true, the SHA does not identify the code, so the
+same input can behave differently on another deployment. If a similar run on a different
+deployment behaved differently, the cause is that deployment's code or config.
+
 ### 6. Decide the root cause
 
 State the root cause at the level someone can act on: code, prompt, tool, configuration,
@@ -107,7 +132,8 @@ would make the next occurrence diagnosable. Do not invent a cause to fill the ga
 
 - Every claim that matters must cite at least one evidence item: a **short verbatim quote**,
   the **span ID** (or log timestamp), and the **field** it came from (e.g.
-  `span 7f3a… › output.content`, `span 91c2… › attributes.error.message`).
+  `span 7f3a… › output.content`, `span 91c2… › attributes.error.message`). For log lines, cite
+  `log` and quote the line verbatim.
 - Quote exactly. Never paraphrase inside quotation marks. Truncate long values with `…`.
 - Prefer the smallest set of evidence that proves the point — 2 to 6 items is typical.
 - Distinguish the symptom (what the user saw) from the cause (why it happened).

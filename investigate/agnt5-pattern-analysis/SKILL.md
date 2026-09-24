@@ -27,6 +27,12 @@ you to the right neighborhood; the pattern itself is usually found by reading ra
   check whether the issue extends beyond that scope.
 - This skill reports findings. It does not create scorers, datasets, alerts, or other
   persistent objects without the user asking.
+- **Small projects:** if the window has fewer than ~50 runs, read every run instead of
+  sampling, and report counts (`3/3`), not percentages that imply a rate.
+- **Synthetic traffic:** test harnesses and fault-injection tools send deliberately malformed
+  inputs (look for markers like `"Command Center test: …"`, `test`/`probe` component names,
+  fixed test error codes). Separate "the test failed as designed" from "the test exposed a
+  real bug" — report the second, list the first under *Not reported*.
 
 ## Workflow
 
@@ -49,6 +55,16 @@ that dominates, a latency or cost step change at a specific time, one model eati
 spend, a deployment after which things shifted. Write these down as leads — they are not
 patterns yet.
 
+**Map deployments before reading runs.** From `list_deployments`, note for each deployment:
+`created`, `status`, `promoted`, `git_sha`, `git_dirty`, and why it ended (`message`, e.g.
+"Replaced by a newer deployment" or "MaxRunDuration exceeded"). Every run carries a
+`deployment_id`, so you can later group failures by deployment. Two traps:
+
+- If `git_dirty` is true, the SHA does **not** identify the code — two deployments with the
+  same SHA can behave differently. Compare behavior across deployments instead.
+- The promoted deployment may be older than the latest previews. A fix that only exists on
+  short-lived previews never reaches production traffic.
+
 If the aggregates show nothing unusual, that is fine. Go straight to reading traces; many
 patterns (wrong answers, bad tool choices, loops, unhappy users) never show up as errors.
 
@@ -64,8 +80,21 @@ you can go further to confirm a lead.
 - **Sample the contrast too.** For each lead, read failing *and* succeeding runs of the same
   component. A pattern is only meaningful relative to what healthy runs do.
 - For each run, read `get_trace_excerpt(trace_id)` (error spans come first). Use `get_trace`
-  only when you need spans the excerpt truncated. Use `get_run_logs` when the trace alone does
-  not explain what happened.
+  only when you need spans the excerpt truncated.
+- **Read logs alongside traces, not only as a fallback.** Applications often catch errors
+  (database, auth, HTTP) and carry on, so every span looks healthy while the logs say
+  `*_failed`. For every failed run in a small project, and for a sample of runs in each
+  candidate cohort in a large one, call `get_run_logs(run_id, project_id)`.
+- **Logs are large** (tens to hundreds of KB per run). Do not read them whole. Filter to lines
+  matching `error|warn|fail|exception|traceback|timeout|401|403|404|5\d\d|ENOTFOUND|refused`
+  plus the app's own event names (`*_started`, `*_completed`, `*_failed`). Tracebacks give
+  the exact file and line — quote them.
+- **Empty traces happen.** If `get_trace_excerpt` returns `total_spans: 0`, use the logs for
+  that run and list the run under *Limits*.
+- **`completed` is not proof of success.** For completed runs, check the logs for failed side
+  effects: HTTP 4xx/5xx on writes, `*_failed` events, "treating as cache miss", missing IDs
+  (`None`/`null`) flowing through later steps. A completed run that wrote nothing is a
+  silent failure.
 - For wrong-output hunting in completed runs, focus on the final LLM output and the tool
   results that fed it.
 - If online evals exist, `list_scores` (by `component_name` and time window) finds low-scoring
@@ -85,7 +114,16 @@ the timeout causes the hallucination.
 Common pattern shapes to look for:
 
 - **Failure chains** — tool error / empty result → agent improvises → wrong or empty answer.
-- **Silent failures** — run is `completed` but the output is wrong, empty, or refuses.
+- **Silent failures** — run is `completed` but the output is wrong, empty, or refuses, or its
+  side effects (writes, notifications, saves) failed.
+- **Swallowed dependency failures** — a database, API, or credential error is caught and
+  turned into "no result", so later steps behave as if the data were simply absent. These
+  are often the highest-impact findings and live only in logs.
+- **Deployment drift** — the same input fails differently on different deployments; the
+  promoted deployment runs older code than the latest previews.
+- **Contract mismatches** — two callers of the same step expect different return shapes
+  (list vs dict), or an error message contradicts the input it received ("X is missing"
+  when X is present).
 - **Loops and waste** — repeated identical tool calls, iteration counts far above baseline,
   context growing each iteration.
 - **Cost drivers** — a component or model whose tokens per run jumped; uncached repeated
@@ -108,8 +146,13 @@ Before reporting, try to break it:
   difference is often the real cause.
 - **Correlation vs cause.** Use trace content to link cause and effect (the tool error span
   precedes and explains the bad answer), not just co-occurrence.
+- **Compare deployments.** Group affected runs by `deployment_id`. If the behavior appears on
+  some deployments and not others with similar input, the cause is the code or config on
+  those deployments, not the input.
 - **Rule out platform noise.** Do not report patterns whose root cause is AGNT5's own
-  evaluation machinery (scorer runs, eval harness failures) — note them separately if seen.
+  machinery — scorer runs, eval harness failures, durable-execution errors such as
+  `STALE_AUTHORITY` or "lease fence mismatch", missing traces, inconsistent span attributes.
+  List them under *Not reported* as platform issues so the AGNT5 team can see them.
 
 ### 5. Measure frequency
 
@@ -163,6 +206,8 @@ Drop or downgrade anything that fails. Reporting three solid patterns beats ten 
 - Each pattern includes **3–5 representative trace evidence items**: run ID, span ID, the
   field (e.g. `output.content`, `attributes.error.message`, `input.messages[2].content`), and
   a **short verbatim quote**. Quote exactly; truncate with `…`.
+- Log lines are valid evidence when the trace does not show the problem. Cite them as
+  run ID › `log` with the verbatim line (timestamp if available) instead of a span ID.
 - Include at least one **contrast** example (a similar run where it did not happen) when that
   sharpens the explanation.
 - Distinguish **observed**, **correlated**, and **inferred cause**.

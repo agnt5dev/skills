@@ -18,6 +18,9 @@ and the September 2026 CLI.
 
 1. Find the task in the tables below and open that topic's `overview.md`. Read only the
    topics the task needs; follow their cross-links when they point elsewhere.
+   **Read `overview.md` (and your language file) in full — do not Grep a topic folder.**
+   Every folder holds Python, TypeScript and Go versions of the same sections, so a search
+   match in `go.md` can look like the Python answer. Search only within the one file you need.
 2. Every topic lives at `references/<stage>/<topic>/`. `overview.md` shows the Python API;
    the same folder has `typescript.md` and `go.md` with the exact
    signatures for that SDK and what it does not support. For a TypeScript or Go project, read

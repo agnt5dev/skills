@@ -1,0 +1,182 @@
+# AGNT5 Project Setup and Local Development
+
+> **TypeScript or Go?** The commands here apply to every language; the language-specific parts (setup, packaging, runtime behaviour) are in [typescript.md](typescript.md) and [go.md](go.md).
+
+Skip any step that is already done: `agnt5 auth status` shows a signed-in user → skip 0;
+`agnt5.yaml` has project metadata → skip 1.
+
+## 0. Install, update, and authenticate the CLI
+
+Install is one-time, machine-wide. **Before every `agnt5 create`/`agnt5 init` run**, update
+the CLI — a stale binary can carry bugs already fixed upstream (an outdated build has
+mis-extracted templates when scaffolding into the current directory). `agnt5 version update`
+(alias `agnt5 upgrade`) no-ops when already current.
+
+```bash
+curl -LsSf https://agnt5.com/cli.sh | bash   # macOS, Linux, WSL2 -- first-time install only
+brew install agnt5/tap/agnt5                 # macOS only, alternative first-time install
+agnt5 version update                         # run every time before create/init
+agnt5 auth login                             # device-code sign-in; add --no-browser over SSH/containers
+agnt5 auth status                            # confirms signed-in user + environment
+```
+
+CI / non-interactive: use a **personal** API key (Studio → Settings → Profile → API keys):
+`agnt5 auth login --api-key <key>` or `export AGNT5_API_KEY=<key>`. A service key
+(`agnt5_sk_…`) is for the gateway (SDK clients, `agnt5 run`); with one in `AGNT5_API_KEY`,
+commands that talk to the control plane (`info`, `inspect`, `deploy`, `secrets`, …) answer
+401. Keep it out of the shell you run the CLI in (`env -u AGNT5_API_KEY agnt5 …`).
+
+The rest of this guide assumes CLI `20260930-a31e8d` or later (`agnt5 version`).
+
+**`command not found: agnt5`** — the installer writes to `~/.agnt5/bin` and appends it to
+`PATH`; open a new terminal or reload the shell. If still missing:
+`export PATH="$HOME/.agnt5/bin:$PATH"` (bash/zsh) or `fish_add_path "$HOME/.agnt5/bin"` (fish).
+If `agnt5 version` still fails, the binary didn't download — re-run the installer and read
+its output.
+
+## 1. Create or link the project
+
+**Starting fresh (no directory yet)** — `agnt5 create` makes a new directory, scaffolds a
+blank starter project, and registers it on AGNT5:
+
+```bash
+agnt5 create my-project                        # new dir, blank starter, registered on AGNT5
+agnt5 create my-project --workspace my-team    # pick the workspace up front
+agnt5 create my-project --local                # skip registering on AGNT5 (fully offline)
+```
+
+**Already in a directory you want to become the project** — `agnt5 init` (alias `link`):
+
+```bash
+agnt5 init my-project                  # scaffold + link the current directory
+agnt5 init                             # inspect current dir, offer to scaffold or link
+agnt5 init --new --name my-project     # force: create a fresh empty project + link
+agnt5 init --project <project-id>      # link to an existing project instead of creating one
+```
+
+What `init` does: empty directory → scaffolds a minimal starter, then links; existing code
+without `agnt5.yaml` → adds a minimal one, then links; already an AGNT5 directory → links or
+updates the link.
+
+**Do not pass `--template <language>/<name>`** for a blank project — scaffolding from a
+template or a description is [ai-templates](../../build/ai-templates/overview.md)' job.
+
+| Flag | Applies to | Effect |
+|---|---|---|
+| `--local` | `create` | Scaffold locally without registering on AGNT5 |
+| `--workspace <id\|name>` | `create`, `init` | Skip the workspace picker |
+| `-y, --yes` | `create`, `init` | Never prompt; fail with an explanation if a choice needs asking |
+| `--dry-run` | `create`, `init` | Show what would happen without executing |
+| `--new` / `--name <name>` | `init` | Create a fresh empty project and link to it |
+| `--project <id>` | `init` | Link to an existing project instead of scaffolding |
+| `--language <lang>` | `create`, `init` | `python` (default) scaffolds a blank starter; `typescript` and `go` start from their quickstart template |
+
+**TypeScript or Go:** `agnt5 create my-project --language typescript` (or `go`) starts from
+the `typescript/quickstart` / `go/quickstart` template, the same as `--template`, and the
+project takes the directory's name. Or write the files yourself and link them with
+`agnt5 init --new --name my-project --workspace <ws> -y`. Details in the reference files.
+Older CLIs failed on `--language typescript|go` and named template projects "quickstart".
+
+**Non-interactive (agents, CI):** the CLI prompts for a workspace when the account has more
+than one — pass `--workspace` and `-y`. Verify with `agnt5 info` (the linked project).
+Inside a linked directory, commands use that project's workspace whatever your default is;
+`agnt5 workspace list` marks the default with `*`, and `agnt5 workspace use <name>` changes it.
+
+## 2. Install dependencies and configure `.env`
+
+The blank Python scaffold pins `agnt5~=0.13.6`, and its sample tests pass with `uv run pytest`.
+A project scaffolded by an older CLI pins `agnt5~=0.8.5` with 0.8-era code whose tests fail on
+the current SDK; update the CLI and scaffold again. Delete the `deploy.resources` block from
+`agnt5.yaml` — it is not applied (see [deploy](../deploy/overview.md)).
+
+```bash
+uv sync                  # creates .venv from pyproject.toml
+cp .env.example .env     # then fill in real keys, e.g. OPENAI_API_KEY=sk-...
+```
+
+The uv warning `VIRTUAL_ENV does not match the project environment path` is harmless.
+Required keys vary by template — check `.env.example`. Deployed workers get secrets
+separately ([deploy](../deploy/overview.md)). The managed Python worker image runs **Python 3.14**, so a
+dependency that only resolves on your local 3.12 will break the deploy — prefer packages with
+3.14 wheels.
+
+## 3. Start the worker
+
+```bash
+agnt5 dev                # foreground, hot reload
+agnt5 dev -d             # background, hot reload; then: agnt5 dev status | agnt5 dev logs | agnt5 dev stop
+agnt5 dev -v             # verbose SDK/runtime logging
+agnt5 dev --no-watch     # disable hot reload
+```
+
+`agnt5 dev -d` returns once the worker has started; if it can't start, it prints the end of
+`.agnt5/worker.log` instead. `agnt5 dev stop` stops the worker and every process it started.
+(Older CLIs had no hot reload under `-d`, printed hints for `agnt5 run logs|status|stop`, which
+don't exist, and could leave a TypeScript worker running after `dev stop`.)
+
+The first `agnt5 dev` in a project creates a service key named `local-dev-<user>-<host>` for
+the worker and prints the command to revoke it; the key has no expiry. See it with
+`agnt5 service-keys list --project <project-id>`; revoke it with
+`agnt5 service-keys revoke <key-id>` when you stop developing on that machine.
+
+A healthy start prints a banner, the worker command, the coordinator it connected to, the
+registered components (workflows / agents / tools / functions), and a project-scoped **Studio
+URL** (`https://app.agnt5.com/projects/<project-id>/components`) — open that exact link. The
+banner text changes between CLI builds; what matters is `Connected to coordinator` and your
+components listed. `agnt5 components --dev` lists what your dev worker registered; plain
+`agnt5 components` reads the production deployment (`--env <name>` or `--deployment <id>`
+for others).
+
+Hot reload watches the project root, `src/`, and `src/<package>/` for `.py .ts .js .go .env`
+changes, so `.env` edits need no restart. `Ctrl+C` stops the worker; the
+`CancelledError`/`KeyboardInterrupt` traceback after it is expected.
+
+## 4. Trigger a run
+
+**Studio**: open the printed Studio URL, pick the component, set input JSON, **Run**. The run
+shows a live trace tree and handles HITL pauses.
+
+**CLI** (no `--env` ⇒ local dev worker):
+
+```bash
+agnt5 run hello_world --input '{"name": "Alice"}'                   # function (default type), streams
+agnt5 run my_workflow --type workflow --input '{"message": "..."}'  # JSON on completion
+agnt5 run workflow my_workflow -i '{"message": "..."}'              # same, positional type
+agnt5 run my_tool --type tool --input '{"adults": 2}'
+agnt5 run my_agent --type agent --input '{"message": "..."}'        # agent input needs "message"
+```
+
+`--type` defaults to `function` and auto-detects on a miss. Other flags: `--timeout 20m` (how
+long to wait for the result, up to 24h; without it the gateway stops waiting after 5 minutes;
+agent runs wait at most 5 minutes; the run keeps going either way), `--env production` /
+`--deployment-id <id>` to hit a deployed worker. There is no session/user flag —
+session-scoped runs come from `Client.run(..., session_id=...)` ([client](../client/overview.md)). Output is
+JSON when piped (`| jq`). A function with `retries=` runs its retries before `agnt5 run`
+returns: you get the final result, or the last attempt's error. To inspect what happened:
+`agnt5 inspect runs ls`, `agnt5 inspect trace -r <run-id>` (see [observe](../../debug/observe/overview.md)). A run that
+hasn't finished (sleeping, paused, or still going when `agnt5 run` stopped waiting) is listed by
+`agnt5 inspect runs ls` with its status, and for a function or workflow `agnt5 run` prints its
+ID; [observe](../../debug/observe/overview.md) shows how to follow or cancel it.
+
+## Common errors
+
+| Error | Fix |
+|---|---|
+| `ModuleNotFoundError: No module named 'agnt5'` | `uv sync` |
+| `... OPENAI_API_KEY must be set` / runs fail immediately | Key missing from `.env` |
+| Worker won't register / "no project" errors | `agnt5 init` to link a project, re-run `agnt5 dev` |
+| Auth errors | `agnt5 auth login` (`agnt5 auth logout` first if you switched accounts) |
+| Wrong workspace / project not found | `agnt5 workspace list`, then `agnt5 workspace use <name>` |
+| A component is missing | `agnt5 components --dev`; check it is imported/registered in `app.py` (or `Worker(auto_register=True)`) |
+| `TypeError: Function 'x' requires FunctionContext as first argument` | Inside a workflow call it through `ctx.step(x, ...)` ([workflows](../../build/workflows/overview.md)) |
+| `ConfigurationError: Tool function 'x' first parameter must be 'ctx: Context'` | Annotate the first tool parameter exactly `ctx: Context` (`from agnt5.context import Context`) |
+| `TypeError: got an unexpected keyword argument 'deployment_id'` on a triggered workflow | Declare it `async def h(ctx, event: dict, **_)` ([webhooks-integrations](../../build/webhooks-integrations/overview.md)) |
+| `400` mentioning `temperature` on `openai/gpt-6*` | `Agent(..., temperature=None)` / `lm.generate(temperature=None)` ([models](../../build/models/overview.md)) |
+| Anything else | `agnt5 dev -v` and read the worker log, or `agnt5 dev logs` when detached |
+
+After moving the project directory: `uv sync && agnt5 init && agnt5 dev` (choose "Link to
+existing" in `init`).
+
+## Source
+
+https://agnt5.com/docs/install-cli · https://agnt5.com/docs/build/local-development

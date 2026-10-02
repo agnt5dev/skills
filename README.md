@@ -3,9 +3,8 @@
 An [Agent Skill](https://agentskills.io) for AI coding agents working with [AGNT5](https://agnt5.com).
 Written against AGNT5 Python SDK **0.13.6**, TypeScript `@agnt5/sdk` **0.10.5**, Go `sdk-go` **v0.10.3** and the September 2026 CLI.
 
-Everything ships as **one skill, `agnt5`**, so your agent's skill list gets one entry instead
-of eighteen. Its [`SKILL.md`](agnt5/SKILL.md) is a short router; the agent opens only the
-reference it needs for the task at hand.
+Everything ships as **one skill, `agnt5`**. Its [`SKILL.md`](agnt5/SKILL.md) is a short router;
+the agent opens only the reference it needs for the task at hand.
 
 ## Install
 
@@ -43,12 +42,6 @@ npx skills add https://github.com/agnt5dev/skills --all -g
 ```
 
 Re-run the same command to update to the latest version, then start a new agent session.
-
-### Upgrading from the separate `agnt5-*` skills
-
-Earlier versions shipped 18 skills (`agnt5-workflows`, `agnt5-deploy`, `agnt5-run-investigation`,
-…). Remove those installs (for Claude Code: delete the `agnt5-*` folders from `.claude/skills/`
-or `~/.claude/skills/`) and install `agnt5` instead. All their content is in `agnt5/references/`.
 
 ## Layout
 

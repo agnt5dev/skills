@@ -23,6 +23,33 @@ with the MCP tool `get_run_logs` (below) or on the run page in Studio.
 
 Run the commands inside the linked project directory; they read that project.
 
+## Command Center capture
+
+For a project that needs failure analysis, enable Command Center before triggering its
+runs. Authenticate with `agnt5 auth login` or a personal API key; enable/disable require
+project update permission. Check that your CLI exposes `agnt5 command-center --help`;
+if the command is missing, update with `agnt5 version update`.
+
+```bash
+agnt5 command-center enable                         # linked project
+agnt5 command-center status --output json
+agnt5 command-center enable --project prj_myproject  # UUID or ref, no prompts
+agnt5 command-center disable --project prj_myproject
+```
+
+The response has `data.enabled` (effective capture), `data.available` (platform
+availability), `data.configured` (an explicit project choice has been saved), and
+`data.source_analysis_enabled` (saved preference). Confirm `enabled` and `available`
+are true before relying on capture. Enabling does not request analysis of earlier failures.
+A `403` on enable/disable requires project update permission; an unavailable project
+returns `409`. Errors exit nonzero, so scripts must check the exit status.
+
+Source analysis is preserved unless explicitly changed: add `--source-analysis` to
+enable it or `--source-analysis=false` to turn it off, on either enable or disable.
+`disable` alone only turns capture off.
+
+Full reference: https://agnt5.com/docs/cli/command-center
+
 ## AGNT5 MCP tools
 
 The CLI ships an MCP server over stdio that uses your `agnt5 auth login` session. Register it

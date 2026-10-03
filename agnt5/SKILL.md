@@ -1,6 +1,6 @@
 ---
 name: agnt5
-description: Build, ship, evaluate and debug AGNT5 apps (Python, TypeScript, Go SDKs, agnt5 CLI, Studio). Use for any AGNT5 task - install the CLI, create, generate or run a project (agnt5 create/init/dev); write functions and durable workflows (ctx.step, retries, cron, state), agents and tools (MCP, sandboxes, memory, handoffs), agent skills/AGENTS.md, human-in-the-loop pauses, prompts and caching, direct model calls, webhook/event triggers and chat bots; call AGNT5 from a backend (Client); deploy, promote, roll back, secrets, agnt5.yaml, serverless endpoints; tests, scorers, experiments and CI gates, online evals; look up runs, traces, logs, metrics. Also use to investigate one run that failed, was slow, cost too much or answered wrong ("why did run X fail"), or to find recurring failures, cost or latency regressions across runs ("what's going wrong", "why is cost up").
+description: Build, ship, evaluate and debug AGNT5 apps (Python, TypeScript, Go SDKs, agnt5 CLI, Studio). Use for any AGNT5 task - install the CLI, create, generate or run a project (agnt5 create/init/dev); write functions and durable workflows (ctx.step, retries, cron, state), agents and tools (MCP, sandboxes, memory, handoffs), agent skills/AGENTS.md, human-in-the-loop pauses, prompts and caching, direct model calls, webhook/event triggers and chat bots; call AGNT5 from a backend (Client); deploy, promote, roll back, secrets, agnt5.yaml, serverless endpoints; tests, scorers, experiments and CI gates, online evals; look up runs, traces, logs, metrics; enable, disable or check Command Center for a project. Also use to investigate one run that failed, was slow, cost too much or answered wrong ("why did run X fail"), or to find recurring failures, cost or latency regressions across runs ("what's going wrong", "why is cost up").
 ---
 
 # AGNT5
@@ -63,7 +63,7 @@ and the September 2026 CLI.
 
 | Task | Read |
 |---|---|
-| Look up runs, traces, logs and metrics; follow or cancel a run; add spans/log attributes; automatic OpenAI/Agents SDK/ADK capture | [debug/observe](references/debug/observe/overview.md) |
+| Look up runs, traces, logs and metrics; enable, disable or check Command Center; follow or cancel a run; add spans/log attributes; automatic OpenAI/Agents SDK/ADK capture | [debug/observe](references/debug/observe/overview.md) |
 | Root-cause **one** run: failed, slow, expensive, or wrong answer (given a run or trace ID) | [debug/run-investigation](references/debug/run-investigation/overview.md) |
 | Find **recurring** behaviors across many runs: failure modes, cost/latency regressions, cohort problems, quality drift | [debug/pattern-analysis](references/debug/pattern-analysis/overview.md) |
 | Connect the AGNT5 MCP server and see which tools the investigation guides use | [debug/mcp-tools](references/debug/mcp-tools.md) |

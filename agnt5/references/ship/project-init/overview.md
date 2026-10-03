@@ -82,6 +82,12 @@ than one — pass `--workspace` and `-y`. Verify with `agnt5 info` (the linked p
 Inside a linked directory, commands use that project's workspace whatever your default is;
 `agnt5 workspace list` marks the default with `*`, and `agnt5 workspace use <name>` changes it.
 
+If the project needs Command Center failure analysis, enable capture after linking and
+before triggering test runs: `agnt5 command-center enable`, then
+`agnt5 command-center status --output json`. See
+[observe: Command Center capture](../../debug/observe/overview.md#command-center-capture)
+for availability, permissions and source-analysis options.
+
 ## 2. Install dependencies and configure `.env`
 
 The blank Python scaffold pins `agnt5~=0.13.6`, and its sample tests pass with `uv run pytest`.

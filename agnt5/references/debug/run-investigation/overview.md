@@ -80,17 +80,20 @@ count. Each event is summarized:
 - on LLM calls, `model`, `provider`, `input_tokens`, `output_tokens`, `cached_tokens` and
   `cost_usd`; on tool calls, `tool_name`.
 
+An `offset` orders events within one run; it can't be compared across runs.
 A `run.failed` with `final: false` is retried: keep paging to the run's real outcome. The
 `event_type` filter matches exactly (`run.failed`, `lm.completed`). Add `include_payloads: true`
 when you need inputs, outputs, prompts or a failure's details, and narrow it with `event_type`:
-full bodies are large. Payload fields count attempts from 0. For the run's own input and output,
-`get_run_input_output` is smaller.
+full bodies are large. In payloads, `function.*` events count attempts from 0
+(`metadata.attempt`), while `data.failure.attempt` and `metadata.activation_attempt` count from
+1, like the summary's `attempt`. For the run's own input and output, `get_run_input_output` is
+smaller.
 
 A step or LLM call that failed is recorded as `workflow.step.unknown_outcome` or
 `lm.unknown_outcome`. Its summary has a `step_key` (`step:region_report:0`,
-`model:openai/gpt-6-luna:0`) but no error. Read its payload: `data.failure` holds the error
-message, the `error_code` (`STEP_FAILED`, `MODEL_FAILED`), whether it is `retryable`, and in
-`error_data.type` a TypeScript or Python error's class (`TypeError`).
+`model:openai/gpt-6-luna:0`), the `error_type`, the `error_message`, and whether it is
+`retryable`. The payload's `data.failure` adds the `error_code` (`STEP_FAILED`, `MODEL_FAILED`)
+and, in `error_data.type`, a TypeScript or Python error's class (`TypeError`).
 
 Find the **first point of divergence** — the earliest event whose behavior is wrong, not the
 event where the error finally surfaced. Errors propagate upward: the message of a
@@ -111,6 +114,15 @@ lower and earlier than the loudest failure. Typical shapes:
   - `worker_disconnect`: the worker went away, and `metadata.worker_termination_reason` (such as
     `OOMKilled`) says why. Check `get_deployment_events` and `get_deployment_logs` (by
     `worker_id`, around that time) for what else the worker was doing.
+- A step failed with "Engine.Append acknowledgement timed out … persistence outcome is unknown"
+  (`retryable: false`) → the worker couldn't confirm a write to the run's journal in time, so the
+  platform can't tell whether it was saved and won't retry the step. The message names the event
+  it was writing; `event_type=function.completed` means the step's own code had finished. This
+  is a platform failure, not the application's. Look for other runs it hit on the same
+  deployment around the same time (`get_deployment_logs` with `search`, in step 5); several at
+  once point to a platform incident to report rather than a code fix, and a backlog in their
+  `queue_time_ms` corroborates it. Before anyone re-runs the input, check the step is
+  idempotent: its code finished, so its side effects may already have happened.
 - An LLM call failed with a provider 4xx (`lm.unknown_outcome`, `retryable: false`) → the
   request was invalid for that model, often after a model or SDK change. Compare the same model
   on another deployment (`sdk_version` in `list_deployments`), and the `lm.started` payloads
@@ -133,6 +145,10 @@ Things to check while reading events:
     error's class.
   - `queue_time_ms` runs to the run's last assignment, so retries inflate it, and a failed run
     can have no `duration_ms`; use `total_time_ms`.
+  - `error_category` is `user_error` for any error that isn't a recognized timeout, rate limit
+    or system error code. SDK and platform failures raised as exceptions land there too: a
+    journal-write timeout reads `RuntimeError`, `user_error`. Judge the cause from the error
+    message, not this field.
 - **TypeScript workers record no trace spans** (`@agnt5/sdk` up to 0.10.5), so
   `agnt5 inspect trace` and Studio's trace view are empty for them. Their events are complete;
   work from those and the logs. Tell a TypeScript worker by the project's `language`
@@ -189,7 +205,10 @@ that is the root cause to report.
 
 A single run cannot tell you what "normal" is. Call `list_runs` for the same `component_name`
 with `status: completed` in a nearby window, pick one or two runs with similar shape, and read
-their events. Compare step by step:
+their events. `list_runs` returns the newest runs first, so set `until` near the failed run's
+`ended_at` (and `since` a few hours before); otherwise the first page holds today's runs, not
+ones from around the failure. If those runs share the anomaly (long queue times, the same step
+much slower), they're inside the incident: take a baseline from before it. Compare step by step:
 
 - Did the healthy run take the same path? Where did the two diverge?
 - Is the slow step also slow in healthy runs (baseline), or only here?
@@ -202,17 +221,25 @@ deployment at the same time.
 If the component's other runs around the same time show it too (`list_runs` over a wider
 `since`/`until`: failures, `total_time_ms`, `llm_cost_usd`), or Studio → **Analytics** shows a
 latency jump or failure spike, say so — that points to an environmental cause (provider outage,
-deploy, dependency) rather than this run's input.
+deploy, dependency) rather than this run's input. To find every run hit by the same error in one
+call, use `get_deployment_logs(deployment_id)` with `search` set to a distinctive part of the
+error message and `start`/`end` around the failure: each matching line carries its `run_id`.
+An affected run logs the error several times, some lines with a full traceback of up to about
+10 KB, so keep the window narrow and allow a few rows per run in `limit`. Leave `severity` unset:
+the same error is logged at more than one level.
 
-**Check which deployment ran it.** The run summary has a `deployment_id`. Look it up with
-`list_deployments(project_id)`: is it still serving (`status`, `message`), or was it replaced or
-a short-lived preview? Read promotion from `promotion_state` and `promoted_at`; the boolean
-`promoted` doesn't reflect it. Does a newer deployment exist, and with which `sdk_version`? If
-`git_sha` is empty or `git_dirty` is true, the SHA does not identify the code, so the same input
-can behave differently on another deployment. If a similar run on a different deployment
-behaved differently, the cause is that deployment's code or config. A deleted deployment is
-missing from `list_deployments`, and the other deployment tools answer 403 "Workspace context is
-required for this action" for it; then say the deployment checks couldn't be done.
+**Check which deployment ran it.** The run summary has a `deployment_id`. Read it with
+`get_deployment(deployment_id)`, one call, rather than paging `list_deployments`: is it still
+serving (`status`, `message`), or was it replaced or a short-lived preview? Read promotion from
+`promotion_state` (and `promoted_at`, which `list_deployments` adds); the boolean `promoted`
+doesn't reflect it. Does a newer deployment exist (`list_deployments(project_id)`), and with
+which `sdk_version`? If `git_sha` is empty or `git_dirty` is true, the SHA does not identify the
+code, so the same input can behave differently on another deployment. If a similar run on a
+different deployment behaved differently, the cause is that deployment's code or config.
+
+A deployment that was deleted is missing from `list_deployments`, and `get_deployment` answers
+404; then say the deployment checks couldn't be done. A terminated deployment is still listed:
+its `state_reason` reads `deleted` because its workers were deleted, not the deployment.
 
 ### 6. Decide the root cause
 

@@ -120,9 +120,12 @@ lower and earlier than the loudest failure. Typical shapes:
   it was writing; `event_type=function.completed` means the step's own code had finished. This
   is a platform failure, not the application's. Look for other runs it hit on the same
   deployment around the same time (`get_deployment_logs` with `search`, in step 5); several at
-  once point to a platform incident to report rather than a code fix, and a backlog in their
-  `queue_time_ms` corroborates it. Before anyone re-runs the input, check the step is
-  idempotent: its code finished, so its side effects may already have happened.
+  once point to a platform incident to report rather than a code fix. A backlog in their
+  `queue_time_ms` corroborates it only once volume is ruled out: a burst of enqueued runs builds
+  a queue by itself, so compare with an earlier burst of similar size (`list_runs` before the
+  window), and with no such burst to compare, leave the backlog out of the evidence. Before
+  anyone re-runs the input, check the step is idempotent: its code finished, so its side
+  effects may already have happened.
 - An LLM call failed with a provider 4xx (`lm.unknown_outcome`, `retryable: false`) → the
   request was invalid for that model, often after a model or SDK change. Compare the same model
   on another deployment (`sdk_version` in `list_deployments`), and the `lm.started` payloads
@@ -167,8 +170,10 @@ looks healthy while the logs record `*_failed` lines. When the logs have a trace
 the exact file and line — quote it. TypeScript failures may have none.
 
 `get_run_logs` searches only the last 24 hours unless you pass `since`/`until`. For an older run
-it returns nothing: pass a window around the run, from `enqueued_at` to `ended_at` in the
-summary, padded by a minute.
+it returns nothing: pass a window around the run, from `started_at` to `ended_at` in the
+summary, padded by a minute. A queued run logs nothing until it starts, so `enqueued_at` only
+widens the window. Start at `enqueued_at` when the run had several attempts (`started_at` is
+when the last one started) or has no `started_at`.
 
 Run logs hold what the application logged through the SDK logger (`ctx.logger`, `getLogger`,
 Go `ctx.Logger()` or `slog` with `NewSlogHandler`) plus the run's lifecycle lines
@@ -176,7 +181,8 @@ Go `ctx.Logger()` or `slog` with `NewSlogHandler`) plus the run's lifecycle line
 `log.Printf`) is not there, so a missing line does not prove the code path didn't run.
 
 Logs can be tens to hundreds of KB, and `get_run_logs` has no text filter. Use a narrow
-`since`/`until` and a `limit` of 20 or less (each line carries about 2 KB of attributes), and
+`since`/`until` and a `limit` of 20 or less (a line carries 2–4 KB of attributes, and one with a
+traceback 8–13 KB), and
 keep only lines matching
 `error|warn|fail|exception|traceback|timeout|401|403|404|5\d\d|ENOTFOUND|refused`, plus the
 application's own event names (`*_started`, `*_completed`, `*_failed`) around the divergence
@@ -224,9 +230,11 @@ latency jump or failure spike, say so — that points to an environmental cause 
 deploy, dependency) rather than this run's input. To find every run hit by the same error in one
 call, use `get_deployment_logs(deployment_id)` with `search` set to a distinctive part of the
 error message and `start`/`end` around the failure: each matching line carries its `run_id`.
-An affected run logs the error several times, some lines with a full traceback of up to about
-10 KB, so keep the window narrow and allow a few rows per run in `limit`. Leave `severity` unset:
-the same error is logged at more than one level.
+An affected run logs the error about four times, at roughly 4 KB a line and 8–10 KB for one with
+a traceback, so budget about 15 KB per run. Lines come back newest first, and much past 30 KB can
+overflow a client's tool output: start with a window of a few minutes and a `limit` of 8 (about
+two runs), then page back by setting `end` just before the oldest line returned, until you have
+the runs you need. Leave `severity` unset: the same error is logged at more than one level.
 
 **Check which deployment ran it.** The run summary has a `deployment_id`. Read it with
 `get_deployment(deployment_id)`, one call, rather than paging `list_deployments`: is it still
@@ -235,7 +243,10 @@ serving (`status`, `message`), or was it replaced or a short-lived preview? Read
 doesn't reflect it. Does a newer deployment exist (`list_deployments(project_id)`), and with
 which `sdk_version`? If `git_sha` is empty or `git_dirty` is true, the SHA does not identify the
 code, so the same input can behave differently on another deployment. If a similar run on a
-different deployment behaved differently, the cause is that deployment's code or config.
+different deployment behaved differently, the cause is usually that deployment's code or
+config, unless the difference lines up with an incident window (other runs failing the same way
+at the same time). Then the incident explains it: compare against a run on the same deployment
+outside the window, if there is one, before blaming its code.
 
 A deployment that was deleted is missing from `list_deployments`, and `get_deployment` answers
 404; then say the deployment checks couldn't be done. A terminated deployment is still listed:

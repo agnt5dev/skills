@@ -268,8 +268,9 @@ Common configuration causes and their fix — use these directly, no need to sea
   installed it. Fix: add it (`uv add <pkg>` for Python, `npm i <pkg>` for TypeScript, `go get`
   for Go), confirm locally with `agnt5 dev` + `agnt5 run`, then redeploy. What gets bundled:
   [deploy](../../ship/deploy/overview.md) ("`agnt5.yaml` and what gets bundled").
-- **A missing environment variable or API key**: set it with `agnt5 secrets set` and redeploy;
-  `.env` never ships. See [deploy](../../ship/deploy/overview.md) ("Secrets and AI provider credentials").
+- **A missing environment variable or API key**: give the user
+  `agnt5 secrets set --name <KEY> --type api_key` to run (it uploads the key to AGNT5, so don't
+  run it yourself), then redeploy; `.env` never ships. See [deploy](../../ship/deploy/overview.md) ("Secrets and AI provider credentials").
 
 If the evidence does not support a confident root cause, say what is missing (e.g. "tool
 input not captured in the event", "no logs around the external call") and what instrumentation

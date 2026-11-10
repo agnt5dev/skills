@@ -98,7 +98,7 @@ Minimal `main.go`:
 
 ```go
 func main() {
-    model := agnt5.NewOpenAIModel(agnt5.OpenAIConfig{Model: "gpt-4o-mini", APIKey: os.Getenv("OPENAI_API_KEY")})
+    model := agnt5.NewOpenAIModel(agnt5.OpenAIConfig{Model: "gpt-6-luna", APIKey: os.Getenv("OPENAI_API_KEY")})
     if err := my_project.NewAgents(model); err != nil { log.Fatal(err) }
 
     worker := agnt5.NewWorker("my-project", agnt5.WithServiceVersion("1.0.0"))
@@ -121,7 +121,7 @@ Identical CLI: `agnt5 run my_workflow --type workflow --input '{"message": "..."
 | `missing go.sum entry for module providing package ...` | `go mod tidy` |
 | `package my-project/src/my_project is not in std` / import errors | module name in `go.mod` must match the import prefix; hyphenated modules need an import alias (`my_project "my-project/src/my_project"`) |
 | `go: updates to go.mod needed` / `go.mod requires go >= 1.26.5` | upgrade the local Go; keep the directive ≤ 1.26.8 for deploys |
-| Provider `400 invalid model ID` | model name has a `provider/` prefix — Go takes bare names (`gpt-4o-mini`) |
+| Provider `400 invalid model ID` | model name has a `provider/` prefix — Go takes bare names (`gpt-6-luna`) |
 | Provider `401` / `authentication` | key empty: `.env` not loaded (use `agnt5 dev`) or wrong `os.Getenv` name |
 | `agnt5: agent model is required` | `NewAgent` without `WithAgentModel` |
 | `agnt5: duplicate component` | same name registered twice (`RegisterTool` + a tool with the same name, or two agents) |

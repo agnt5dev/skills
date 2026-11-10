@@ -12,7 +12,7 @@ import { LM } from '@agnt5/sdk';
 const lm = LM.openai();   // provider client; there is no module-level lm.generate()
 
 const response = await lm.generate({
-  model: 'openai/gpt-4o-mini',
+  model: 'openai/gpt-6-luna',
   prompt: { id: 'support_reply', variables: { customer: { name: 'Ada' }, topic: 'shipping' } },
 });
 console.log(response.text);
@@ -41,7 +41,7 @@ blocks, `.md` or `.mdx` only). Resolution order in the TypeScript SDK:
 ## Select a version
 
 ```typescript
-await lm.generate({ model: 'openai/gpt-4o-mini', prompt: { id: 'support_reply', version: '3' } });
+await lm.generate({ model: 'openai/gpt-6-luna', prompt: { id: 'support_reply', version: '3' } });
 ```
 
 Exact string match against the file's `version` (`'3'`) or `version_id` (UUID).
@@ -77,7 +77,7 @@ const lm = LM.openai();
 export const draftReply = fn('draft_reply').run(
   async (ctx: Context, input: { customerName: string; topic: string }) => {
     const response = await lm.generate({
-      model: 'openai/gpt-4o-mini',
+      model: 'openai/gpt-6-luna',
       prompt: { id: 'support_reply', variables: { customer: { name: input.customerName }, topic: input.topic } },
     });
     return response.text;
@@ -154,7 +154,7 @@ user message, keep the tool list stable, use the same `modelName` string.
 |---|---|---|
 | `new Prompt({...})` has no `variables` field | wrong `Prompt` (MCP class) | use a plain `{ id, variables }` object |
 | Prompt re-generates on every HITL resume | `draftReply(ctx, ...)` called without `ctx.step` | wrap in `ctx.step` |
-| OpenAI 400 on `gpt-6-*` | `temperature` sent by default (0.7 on agents) | `temperature: 1` on the agent, `config.temperature: 1` on `generate`, or `temperature: 1` in the prompt front matter |
+| OpenAI 400 on `gpt-6-*` | `temperature` sent by default on `@agnt5/sdk` 0.10.x (0.7 on agents) | upgrade to 0.11+, or `temperature: 1` on the agent, `config.temperature: 1` on `generate`, or `temperature: 1` in the prompt front matter |
 | `reasoningEffort: 'low'` does not type-check | `ReasoningEffort` is `'minimal' \| 'medium' \| 'high'`; `'minimal'` 400s on gpt-6-luna | `reasoningEffort: 'low' as ReasoningEffort` (works at runtime) |
 | `response.usage.cachedTokens` — "possibly undefined" | `usage` is optional | `response.usage?.cachedTokens` |
 | Prompt file not found in the deployed worker | resolved from `process.cwd()` | keep `prompts/` at the project root next to `app.ts` |

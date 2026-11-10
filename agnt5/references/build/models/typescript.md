@@ -32,13 +32,13 @@ import type { LMGenerateRequest, LMGenerateResponse, ReasoningEffort } from '@ag
 
 const lm = LM.openai();
 const request: LMGenerateRequest = {
-  model: 'openai/gpt-4o-mini',
+  model: 'openai/gpt-6-luna',
   systemPrompt: 'Route support tickets.',                 // or a leading systemMessage(...)
   messages: [userMessage(ticket)],                        // Message { role, content, toolCalls?, toolCallId?, name? }
   tools: [createTool('lookup_order', 'Fetch an order', { type: 'object', properties: { order_id: { type: 'string' } }, required: ['order_id'] })],
   toolChoice: { choiceType: 'auto' },                     // 'auto' | 'none' | { choiceType: 'tool', toolName }
   config: {
-    temperature: 1,                                       // gpt-6 accepts only 1; omit or set 1
+    temperature: undefined,                               // leave out for gpt-6 on 0.11+ (0.10.x: set 1)
     maxOutputTokens: 300,
     topP: undefined,
     responseFormat: undefined,                            // jsonSchemaFormat(name, schema, strict?)
@@ -78,7 +78,7 @@ const format = jsonSchemaFormat('verdict', {
   properties: { label: { type: 'string' }, confidence: { type: 'number' } },
   required: ['label', 'confidence'],
 }, true);                                                  // strict = true -> OpenAI strict mode
-const res = await lm.generate({ model: 'openai/gpt-4o-mini', messages: [userMessage(text)], config: { responseFormat: format } });
+const res = await lm.generate({ model: 'openai/gpt-6-luna', messages: [userMessage(text)], config: { responseFormat: format } });
 const verdict = JSON.parse(res.text) as { label: string; confidence: number };
 ```
 
@@ -115,7 +115,7 @@ aliases of `cache`. `normalizePromptCache(cache)` returns the resolved `PromptCa
 
 ## Agents and fakes
 
-`new Agent({ name, model: LM.openai(), modelName: 'openai/gpt-4o-mini', instructions, temperature?, builtInTools?, ... })`
+`new Agent({ name, model: LM.openai(), modelName: 'openai/gpt-6-luna', instructions, temperature?, builtInTools?, ... })`
 takes either an `LM` or any object implementing the legacy `LanguageModel` interface
 (`generate(request): Promise<GenerateResponse>`, optional `stream()`), which is how you inject
 a canned model in tests ([testing](../../improve/testing/overview.md)). Here `GenerateRequest` / `GenerateResponse` are the
@@ -127,5 +127,7 @@ root exports: a reply is `{ text, usage?, finishReason?, toolCalls? }` with no `
 - `response.structuredOutput` is always `undefined`; `JSON.parse(response.text)`.
 - `ReasoningEffort` excludes `'low'`/`'none'`; cast when the provider supports them.
   `'minimal'` is rejected (400) by `gpt-6-luna`.
-- Set `temperature: 1` for gpt-6 models (`Agent` and `generate`).
+- gpt-6 models: on `@agnt5/sdk` 0.11+ leave `temperature` out (`Agent` and `generate` work, tools
+  included; checked on 0.11.2). On 0.10.x the `Agent` sends 0.7 and OpenAI returns 400 — set
+  `temperature: 1` there.
 - No cancellation of in-flight calls; bound with `maxOutputTokens` and provider timeouts.

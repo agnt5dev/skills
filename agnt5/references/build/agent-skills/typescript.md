@@ -18,7 +18,7 @@ import { Agent, LM, Sandbox } from '@agnt5/sdk';
 const researcher = new Agent({
   name: 'researcher',
   model: LM.openai(),
-  modelName: 'openai/gpt-4o-mini',
+  modelName: 'openai/gpt-6-luna',
   instructions: 'Help the user analyze documents.',
   skillsDir: './skills',
   skills: ['pdf-extraction', 'sql-reporting'],
@@ -28,7 +28,7 @@ const researcher = new Agent({
 const reporter = new Agent({
   name: 'reporter',
   model: LM.openai(),
-  modelName: 'openai/gpt-4o-mini',
+  modelName: 'openai/gpt-6-luna',
   instructions: 'Build reports from warehouse data.',
   skillsDir: './skills',
   skills: ['sql-reporting'],

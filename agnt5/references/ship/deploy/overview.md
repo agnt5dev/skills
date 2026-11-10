@@ -7,6 +7,10 @@ Deploying moves your worker off your laptop onto AGNT5's managed infrastructure.
 
 ## Secrets and AI provider credentials (before deploying)
 
+**Ask the user before storing a secret.** Setting one uploads a credential to AGNT5. Even when the
+key is already in your shell or `.env`, don't copy it into `agnt5 secrets set` on your own — show the
+command and let the user run it or confirm.
+
 ```bash
 agnt5 secrets set --name OPENAI_API_KEY --type api_key            # prompted securely
 echo "sk-..." | agnt5 secrets set --name OPENAI_API_KEY --type api_key --stdin

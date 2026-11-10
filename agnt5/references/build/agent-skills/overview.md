@@ -37,14 +37,14 @@ folder ships in the same deployment bundle as your worker code.
 from agnt5 import Agent, Sandbox
 
 researcher = Agent(
-    name="researcher", model="openai/gpt-4o-mini",
+    name="researcher", model="openai/gpt-6-luna",
     instructions="Help the user analyze documents.",
     skills_dir="./skills", skills=["pdf-extraction", "sql-reporting"],
     sandbox=Sandbox(),
 )
 
 reporter = Agent(
-    name="reporter", model="openai/gpt-4o-mini",
+    name="reporter", model="openai/gpt-6-luna",
     instructions="Build reports from warehouse data.",
     skills_dir="./skills", skills=["sql-reporting"],
 )
@@ -57,7 +57,7 @@ with the list of available skills (typos surface immediately, not at runtime).
 **Load every skill in the pool**: omit `skills=` entirely.
 
 ```python
-agent = Agent(name="generalist", model="openai/gpt-4o-mini",
+agent = Agent(name="generalist", model="openai/gpt-6-luna",
               instructions="Use whichever skill fits the task.", skills_dir="./skills")
 ```
 
@@ -65,7 +65,7 @@ agent = Agent(name="generalist", model="openai/gpt-4o-mini",
 
 ```python
 from agnt5 import Agent, Skill
-agent = Agent(name="analyst", model="openai/gpt-4o-mini", instructions="Analyze documents.",
+agent = Agent(name="analyst", model="openai/gpt-6-luna", instructions="Analyze documents.",
               skills=[Skill.from_path("./my-skills/pdf-extraction")])
 ```
 
@@ -103,7 +103,7 @@ use skills for capabilities the agent reaches for only sometimes.
 
 ```python
 agent = Agent(
-    name="researcher", model="openai/gpt-4o-mini",
+    name="researcher", model="openai/gpt-6-luna",
     instructions="Help the user analyze documents.",
     agents_md="./AGENTS.md", skills_dir="./skills", skills=["pdf-extraction"],
 )

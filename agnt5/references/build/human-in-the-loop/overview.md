@@ -114,7 +114,7 @@ from agnt5.tool import AskUserTool, RequestApprovalTool   # not re-exported from
 @workflow
 async def agent_with_hitl(ctx: WorkflowContext, task: str) -> dict:
     agent = Agent(
-        name="assistant", model="openai/gpt-4o-mini",
+        name="assistant", model="openai/gpt-6-luna",
         instructions="Ask for clarification when ambiguous. Request approval before changes.",
         tools=[AskUserTool(ctx), RequestApprovalTool(ctx)],
     )

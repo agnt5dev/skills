@@ -7,7 +7,7 @@ understate Go — `WithAgentSandbox`, skills and `SandboxTools` all exist).
 
 | Python parameter | Go |
 |---|---|
-| `model="openai/gpt-4o-mini"` | `agnt5.WithAgentModel(agnt5.NewOpenAIModel(agnt5.OpenAIConfig{Model: "gpt-4o-mini", APIKey: os.Getenv("OPENAI_API_KEY")}))` — bare name, explicit key |
+| `model="openai/gpt-6-luna"` | `agnt5.WithAgentModel(agnt5.NewOpenAIModel(agnt5.OpenAIConfig{Model: "gpt-6-luna", APIKey: os.Getenv("OPENAI_API_KEY")}))` — bare name, explicit key |
 | `instructions=` | `agnt5.WithAgentInstructions(text)` |
 | `tools=[...]` | `agnt5.WithAgentTools(tools...)` (`agnt5.Tool` values; agents are not auto-wrapped — see below) |
 | `built_in_tools=` | none |
@@ -247,9 +247,7 @@ agents in `handoffs`, `confirmation=`/`durable=` tool flags.
 - Missing `WithToolSchema`: the model sees a parameterless tool and calls it with `{}`.
 - `args["n"].(int)` panics/misses — JSON numbers are `float64`.
 - Anthropic agents truncate at 1024 output tokens (no agent-level `MaxTokens`); wrap the model.
-- gpt-6 tool-using agents fail over Chat Completions (`reasoning_effort` cannot be set), and
-  `Temperature`/`MaxTokens` sent to reasoning models are rejected. Use
-  `gpt-4o-mini`/`gpt-4.1-mini`, or an `OpenAIConfig.HTTPClient` transport that rewrites the
-  request body.
+- gpt-6 tool-using agents work on sdk-go v0.11.0 (checked) and fail with 400 on v0.10.3 —
+  upgrade, or use `gpt-4.1-mini` on v0.10.3. Leave `Temperature` unset for gpt-6.
 - `ErrAgentMaxTurnsExceeded` discards the transcript; `WithAgentMaxTurns(0)` means 10, not 0.
 - Session memory without a session ID is per-run.

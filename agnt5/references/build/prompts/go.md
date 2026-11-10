@@ -14,16 +14,15 @@ input or env) — `LanguageModel` values only hold config and are cheap to const
 ## Calling a model directly
 
 ```go
-model := agnt5.NewOpenAIModel(agnt5.OpenAIConfig{Model: "gpt-4o-mini", APIKey: os.Getenv("OPENAI_API_KEY")})
+model := agnt5.NewOpenAIModel(agnt5.OpenAIConfig{Model: "gpt-6-luna", APIKey: os.Getenv("OPENAI_API_KEY")})
 
 func DraftReply(ctx *agnt5.Context, in DraftInput) (string, error) {
-    temp, maxTokens := 0.2, 600
+    maxTokens := 600 // no Temperature: gpt-6 accepts only the default
     resp, err := ctx.Generate(model, agnt5.GenerateRequest{
         Messages: []agnt5.Message{
             {Role: agnt5.MessageRoleSystem, Content: supportSystemPrompt},          // byte-identical every call
             {Role: agnt5.MessageRoleUser, Content: renderUser(in.Customer, in.Topic)}, // dynamic content here
         },
-        Temperature: &temp,     // omit for reasoning models (the gpt-6 family rejects it)
         MaxTokens:   &maxTokens,
     })
     if err != nil {
@@ -82,5 +81,5 @@ Managed `Prompt`/`PromptRef`, `prompts/*.mdx`, version selection, `LLMRuntimeOpt
 - Agents cannot set `MaxTokens`; the Anthropic provider always sends `max_tokens: 1024` unless
   the request sets it, so long outputs need `ctx.Generate` with `MaxTokens` (or a
   `LanguageModel` wrapper — see [agents-tools](../agents-tools/overview.md)).
-- Sending `Temperature`/`MaxTokens` to a gpt-6 model is rejected, and the judge's fixed
-  `temperature: 0` makes gpt-6 unusable as a judge.
+- Leave `Temperature` unset for gpt-6 models (`MaxTokens` works on sdk-go v0.11.0). The judge's
+  fixed `temperature: 0` makes gpt-6 unusable as a judge.

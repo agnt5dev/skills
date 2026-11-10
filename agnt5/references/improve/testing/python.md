@@ -80,7 +80,7 @@ async def lookup_order(ctx: Context, order_id: str) -> str:
 
 async def test_agent_answers():
     model = FakeModel([GenerateResponse(text="The order is in transit.")])
-    agent = Agent(name="support", model=model, instructions="Be brief.", temperature=None)
+    agent = Agent(name="support", model=model, instructions="Be brief.")
     result = await agent.run("Where is my order?")
     assert result.output == "The order is in transit."
     assert "Be brief." in (model.requests[0].system_prompt or "")
@@ -93,7 +93,7 @@ async def test_agent_calls_a_tool():
         GenerateResponse(text="Order 42 is in transit."),
     ])
     agent = Agent(name="support_tools", model=model, instructions="Use tools.",
-                  tools=[lookup_order], temperature=None)
+                  tools=[lookup_order])
     result = await agent.run("Where is order 42?")
     assert result.output == "Order 42 is in transit."
     assert [call["name"] for call in result.tool_calls] == ["lookup_order"]

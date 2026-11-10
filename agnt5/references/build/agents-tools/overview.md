@@ -12,7 +12,7 @@ from agnt5 import Agent
 
 agent = Agent(
     name="researcher",
-    model="openai/gpt-4o-mini",
+    model="openai/gpt-6-luna",
     instructions="You are a research assistant. Answer questions with cited sources.",
 )
 ```
@@ -27,7 +27,7 @@ agent = Agent(
 | `handoffs` | no | Agents to delegate full control to |
 | `sandbox` | no | `Sandbox()` for isolated file/code execution |
 | `max_iterations` | no | Max reasoning loops, default `10` |
-| `temperature` / `max_tokens` / `top_p` | no | The only sampling settings. Default temperature `0.7` is sent unless you pass `temperature=None` (sends nothing) — required for `openai/gpt-6*`, which rejects any temperature but `1`; `gpt-5*` / `o1*` already send none. No `reasoning_effort` on `Agent` |
+| `temperature` / `max_tokens` / `top_p` | no | The only sampling settings. Leave `temperature` out for `openai/gpt-6*` (rejects any value but `1`), `gpt-5*` and `o1*` — they work without it (gpt-6 checked on SDK 0.13.8 and 0.15.2). For other models the default `0.7` is sent unless you pass `temperature=None`. No `reasoning_effort` on `Agent` |
 | `model_config` | no | Accepted but **not read** in 0.13.6 (stored on the agent, never used). Custom endpoints come from provider env vars read by the native layer: `OPENAI_BASE_URL`, `ANTHROPIC_BASE_URL`, `OPENROUTER_BASE_URL`, `DEEPSEEK_BASE_URL`, `MOONSHOT_BASE_URL`, `TOGETHER_BASE_URL`, plus `OPENAI_ORGANIZATION`, `OPENAI_PROJECT`, `OPENAI_REQUEST_TIMEOUT_SECS` |
 | `cache` | no | `True` or `lm.PromptCache(...)` — provider prompt caching (see [prompts](../prompts/overview.md)) |
 | `callbacks` / `before_*_callback` / `after_*_callback` | no | Guardrail hooks — see Callbacks below |
@@ -78,7 +78,7 @@ async def get_weather(ctx: Context, city: str) -> str:
     """
     return f"Sunny, 22°C in {city}"
 
-agent = Agent(name="assistant", model="openai/gpt-4o-mini",
+agent = Agent(name="assistant", model="openai/gpt-6-luna",
               instructions="...", tools=[get_weather])
 ```
 
@@ -101,7 +101,7 @@ Run on the provider's infrastructure — use `built_in_tools=`, **not** `tools=`
 from agnt5.lm import BuiltInTool
 
 agent = Agent(
-    name="researcher", model="openai/gpt-4o-mini",
+    name="researcher", model="openai/gpt-6-luna",
     instructions="Always use web_search for current information.",
     built_in_tools=[BuiltInTool.WEB_SEARCH],
 )
@@ -143,7 +143,7 @@ mcp = MCPClient(id="repo-tools")
 mcp.add_streamable_http_server("deepwiki", "https://mcp.deepwiki.com/mcp")
 await mcp.connect()   # must connect before get_tools()/list_tools()
 
-agent = Agent(name="repository_researcher", model="openai/gpt-4o-mini",
+agent = Agent(name="repository_researcher", model="openai/gpt-6-luna",
               instructions="...", tools=mcp.get_tools())
 ```
 
@@ -182,7 +182,7 @@ tools can reach the same workspace via `ctx.sandbox`.
 from agnt5 import Agent, Sandbox
 
 agent = Agent(
-    name="coder", model="openai/gpt-4o-mini",
+    name="coder", model="openai/gpt-6-luna",
     instructions="Use the sandbox workspace to write files and run code before answering.",
     sandbox=Sandbox(),   # or Sandbox(provider="daytona") to pick a specific provider
 )
@@ -208,7 +208,7 @@ reasoning. Pass the `Agent` directly in `tools=[...]`; it auto-wraps as `ask_<na
 
 ```python
 coordinator = Agent(
-    name="coordinator", model="openai/gpt-4o-mini",
+    name="coordinator", model="openai/gpt-6-luna",
     instructions="Use the researcher and analyst to answer complex questions.",
     tools=[research_agent, analyst_agent],
 )
@@ -221,7 +221,7 @@ final result. Good for routing/triage.
 from agnt5 import handoff
 
 triage_agent = Agent(
-    name="triage", model="openai/gpt-4o-mini",
+    name="triage", model="openai/gpt-6-luna",
     instructions="Route the user to the right specialist.",
     handoffs=[
         handoff(billing_agent, "Transfer for billing/payment questions"),
@@ -262,7 +262,7 @@ def guard_tools(cb: ToolCallbackContext):
         return {"error": f"{cb.tool_name} is not allowed"}   # tool is not executed
     return None
 
-agent = Agent(name="support", model="openai/gpt-4o-mini", instructions="...",
+agent = Agent(name="support", model="openai/gpt-6-luna", instructions="...",
               tools=[...], before_tool_callback=guard_tools)
 ```
 

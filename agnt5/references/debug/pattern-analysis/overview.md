@@ -11,6 +11,11 @@ happens, where, how often, and show proof. "Some runs fail with errors" is not a
 "`travel_booking_agent` answers without flight data when `search_flights` times out (>30s),
 in 14% of runs for origin=`international`" is.
 
+When a pattern's fix is configuration (a missing package or key), take the commands from
+[run-investigation](../run-investigation/overview.md) step 6, e.g.
+`agnt5 secrets set --name <KEY> --type api_key` for the user to run — don't write AGNT5 CLI
+commands from memory.
+
 Most interesting patterns are **not** visible in metrics. Error counts and latency charts get
 you to the right neighborhood; the pattern itself is usually found by reading individual runs:
 their events and logs.

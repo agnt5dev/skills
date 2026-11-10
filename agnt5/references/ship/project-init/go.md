@@ -8,7 +8,7 @@ install/auth (step 0 of overview.md) is language-independent.
 - `go version` ≥ the `go` directive in `go.mod`. The SDK's own `go.mod` says `go 1.26.5`; the
   managed worker image runs **go1.26.8 linux/amd64**, so keep your directive ≤ `1.26.8`
   (`go 1.26.5` as the templates do) or the deploy build fails.
-- `go list -m -versions github.com/agnt5dev/sdk-go` shows released SDK versions.
+- New projects pin `github.com/agnt5dev/sdk-go v0.11.0` ([ai-templates/go.md](../../build/ai-templates/go.md)).
 
 ## 1. Create or link (Go)
 

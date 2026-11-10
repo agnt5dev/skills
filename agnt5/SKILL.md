@@ -1,6 +1,6 @@
 ---
 name: agnt5
-description: Build, ship, evaluate and debug AGNT5 apps (Python, TypeScript, Go SDKs, agnt5 CLI, Studio). Use for any AGNT5 task - install the CLI, create, generate or run a project (agnt5 create/init/dev); write functions and durable workflows (ctx.step, retries, cron, state), agents and tools (MCP, sandboxes, memory, handoffs), agent skills/AGENTS.md, human-in-the-loop pauses, prompts and caching, direct model calls, webhook/event triggers and chat bots; call AGNT5 from a backend (Client); deploy, promote, roll back, secrets, agnt5.yaml, serverless endpoints; tests, scorers, experiments and CI gates, online evals; look up runs, traces, logs, metrics; enable, disable or check Command Center for a project. Also use to investigate one run that failed, was slow, cost too much or answered wrong ("why did run X fail"), or to find recurring failures, cost or latency regressions across runs ("what's going wrong", "why is cost up").
+description: Build, ship, evaluate and debug AGNT5 apps (Python, TypeScript, Go SDKs, agnt5 CLI, Studio). Use for any AGNT5 task, and for any change to a project that has agnt5.yaml or uses the agnt5, @agnt5/sdk or sdk-go SDK, even when the request doesn't say AGNT5: create, generate or run a project (agnt5 create/init/dev); functions and durable workflows (ctx.step, retries, cron, state); agents and tools (MCP, sandboxes, memory, handoffs), agent skills/AGENTS.md; human-in-the-loop pauses; prompts, caching, model calls; webhook/event triggers and chat bots; Client calls from a backend; deploy, promote, roll back, secrets, serverless endpoints; tests, scorers, experiments, CI gates, online evals; runs, traces, logs, metrics, deployment health; Command Center. Also use to investigate one run that failed, was slow, cost too much or answered wrong ("why did run X fail"), or recurring failures, cost or latency regressions across runs ("what's going wrong", "why is cost up").
 ---
 
 # AGNT5
@@ -12,8 +12,9 @@ locally with `agnt5 dev`, and ship it with `agnt5 deploy` (or as a serverless en
 execution is a **run** you can inspect in Studio, the CLI, or the AGNT5 MCP server.
 
 Written against Python SDK **0.13.6**, TypeScript `@agnt5/sdk` **0.10.5**, Go `sdk-go` **v0.10.3**
-and the September 2026 CLI. Install the latest SDK (`uv add agnt5` / `npm i @agnt5/sdk`) and use
-the references as written — **do not look up versions online** (no `pip index`, `curl pypi.org`,
+and the September 2026 CLI. New TypeScript and Go projects pin `@agnt5/sdk` **^0.11.2** and
+`sdk-go` **v0.11.0** (see the templates), where gpt-6 models work without a temperature. Install
+the latest SDK (`uv add agnt5` / `npm i @agnt5/sdk`) and use the references as written — **do not look up versions online** (no `pip index`, `curl pypi.org`,
 `npm view`) and do not inspect the installed SDK to re-check these APIs. If an API shown here
 fails on a newer SDK, report the error to the user.
 

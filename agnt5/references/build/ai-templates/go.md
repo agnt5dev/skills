@@ -2,8 +2,8 @@
 
 Verified against `github.com/agnt5dev/sdk-go` **v0.10.3** and the shipped Go templates
 (`quickstart`, `weather-agent`, `code_reviewer`, `hitl_deep_research`, `tutor_agent`,
-`travel_booking_customer_service`, `coding_agent`). Check the current version first:
-`go list -m -versions github.com/agnt5dev/sdk-go`.
+`travel_booking_customer_service`, `coding_agent`). New templates pin **v0.11.0**, where gpt-6
+models work for tool-using agents (checked).
 
 ## Layout
 
@@ -34,7 +34,7 @@ module <template-name>
 
 go 1.26.5
 
-require github.com/agnt5dev/sdk-go v0.10.3
+require github.com/agnt5dev/sdk-go v0.11.0
 ```
 
 Run `go mod tidy` after writing the code (fills `go.sum` and indirect requirements), then
@@ -262,9 +262,9 @@ every other provider sends the string verbatim, so `"openai/gpt-6-luna"` is a 40
 
 Warnings:
 
-- Default to `gpt-6-luna` on sdk-go v0.11.0+ (tool-using agents work; checked). Leave
-  `Temperature` unset. On v0.10.3 tool-using gpt-6 agents fail with 400 — upgrade, or use
-  `gpt-4.1-mini` there.
+- Default to `gpt-6-luna` (sdk-go v0.11.0+, as pinned above; tool-using agents work). Leave
+  `Temperature` unset. On an existing v0.10.3 project tool-using gpt-6 agents fail with 400 —
+  upgrade, or use `gpt-4.1-mini` there.
 - The Anthropic provider always sends `max_tokens: 1024` unless a `GenerateRequest` sets
   `MaxTokens`; agents cannot, so Anthropic-backed agent replies are capped at 1024 tokens.
   Wrap the model (a type whose `Generate` sets `request.MaxTokens` then delegates) when longer

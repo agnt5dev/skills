@@ -10,7 +10,7 @@ from agnt5 import lm
 from agnt5.lm import BuiltInTool, Message, PromptCache, ReasoningEffort
 
 response = await lm.generate(
-    model="openai/gpt-4o-mini",             # required, "provider/model"
+    model="openai/gpt-6-luna",             # required, "provider/model"
     prompt=None,                            # str for a single user turn, or Prompt / dict for a managed prompt
     messages=[{"role": "user", "content": "..."}],   # list of dicts; roles system/user/assistant
     system_prompt=None,
@@ -45,7 +45,7 @@ class Verdict(BaseModel):
     label: str
     confidence: float
 
-response = await lm.generate(model="openai/gpt-4o-mini", prompt=text, response_format=Verdict)
+response = await lm.generate(model="openai/gpt-6-luna", prompt=text, response_format=Verdict)
 verdict = Verdict.model_validate_json(response.text)      # do not rely on response.parsed
 ```
 
@@ -61,7 +61,7 @@ from agnt5.lm import GenerateRequest, GenerationConfig, LMClient, Message, ToolC
 
 client = LMClient(provider="openai")
 request = GenerateRequest(
-    model="openai/gpt-4o-mini",
+    model="openai/gpt-6-luna",
     messages=[Message.system("You route support tickets."), Message.user(ticket)],
     tools=[ToolDefinition(name="lookup_order", description="Fetch an order",
                           parameters={"type": "object", "properties": {"order_id": {"type": "string"}},
@@ -109,7 +109,7 @@ events renamed before they reach clients (`Client.stream_events`, SSE): `lm.mess
 
 ```python
 await lm.generate(model="anthropic/claude-sonnet-5", system_prompt=big_context, prompt=q, cache=True)
-await lm.generate(model="openai/gpt-4o-mini", prompt=q, cache=PromptCache(key="support-v3", retention="24h"))
+await lm.generate(model="openai/gpt-6-luna", prompt=q, cache=PromptCache(key="support-v3", retention="24h"))
 
 cache = await lm.create_cache("google/gemini-2.5-flash", contents=[manual_text],
                               system_prompt="You are the manual.", ttl_seconds=3600)   # Gemini explicit cache
@@ -124,8 +124,8 @@ hits show up in `usage.cached_tokens`. Details and Agent-level `cache=` in [prom
 
 ## Quirks that bite in Python
 
-- Never pass `temperature=0` to a gpt-6 model; `Agent(...)` defaults to `0.7`, so pass
-  `temperature=None` there.
+- Don't pass `temperature` to a gpt-6 model (it accepts only 1); `Agent(...)` works with
+  gpt-6 when `temperature` is left out.
 - `reasoning_effort` is dropped in `LMClient._build_kwargs()` -> Rust binding (no parameter).
 - `structured_output`/`parsed` are `None`; parse `text`.
 - `lm.generate()` inside a workflow is memoized per step position like any model call; give

@@ -1,12 +1,12 @@
 # Model providers
 
-Model strings are `"<provider>/<model-name>"`, e.g. `openai/gpt-4o-mini` (the template default),
+Model strings are `"<provider>/<model-name>"`, e.g. `openai/gpt-6-luna` (the template default),
 `anthropic/claude-sonnet-5`, `google/gemini-2.5-pro`. Model names change often — use the one the
 user asks for, and check the provider's docs when unsure instead of guessing.
 
 **Go exception:** the Go SDK has no `"provider/model"` dispatch. The provider is the constructor
 (`agnt5.NewOpenAIModel`, `NewAnthropicModel`, `NewGoogleModel`, ...), the model name is bare
-(`OpenAIConfig{Model: "gpt-4o-mini"}` — `"openai/gpt-4o-mini"` is sent verbatim and rejected
+(`OpenAIConfig{Model: "gpt-6-luna"}` — `"openai/gpt-6-luna"` is sent verbatim and rejected
 with `invalid model ID`), and the key is passed explicitly from the env var below
 (`APIKey: os.Getenv("OPENAI_API_KEY")`). Details: [go.md](go.md).
 

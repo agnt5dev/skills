@@ -12,7 +12,10 @@ locally with `agnt5 dev`, and ship it with `agnt5 deploy` (or as a serverless en
 execution is a **run** you can inspect in Studio, the CLI, or the AGNT5 MCP server.
 
 Written against Python SDK **0.13.6**, TypeScript `@agnt5/sdk` **0.10.5**, Go `sdk-go` **v0.10.3**
-and the September 2026 CLI.
+and the September 2026 CLI. Install the latest SDK (`uv add agnt5` / `npm i @agnt5/sdk`) and use
+the references as written — **do not look up versions online** (no `pip index`, `curl pypi.org`,
+`npm view`) and do not inspect the installed SDK to re-check these APIs. If an API shown here
+fails on a newer SDK, report the error to the user.
 
 ## How to use this skill
 
@@ -27,6 +30,16 @@ and the September 2026 CLI.
    that file too — it overrides the Python examples.
 3. `client`, `models`, `serverless` and `testing` are the exception: `overview.md` covers all
    three SDKs, and the per-language detail is in `python.md`, `typescript.md` and `go.md`.
+4. **When you change a project's code, you are done only after it runs.** This covers new
+   projects, workflows, agents, tools, HITL pauses and scorers. Finish with: link the project if
+   it isn't linked (`agnt5 init --new --name <name> -y`), `agnt5 dev -d`, `agnt5 run …` with a
+   real input, then `agnt5 dev stop`. Model keys can be in the **shell environment or `.env`** —
+   check both (`env | grep -c _API_KEY`, `grep -o '^[A-Z_]*_API_KEY' .env` — names only, never
+   print values) before saying one is missing; if it is really missing, ask the user. A local key
+   is for local runs only: **ask before storing it as an AGNT5 secret** (`agnt5 secrets set`
+   uploads it). For a human-in-the-loop pause, confirm the run pauses, then
+   answer it (AGNT5 MCP `answer_paused_run`, Studio, or `POST /v1/workflows/resume/<run_id>`)
+   and confirm it completes. Report the real output, not an example.
 
 ## Build
 
@@ -39,13 +52,13 @@ and the September 2026 CLI.
 | Versioned `prompts/<id>.mdx` artifacts, pinning versions, runtime model overrides, prompt caching | [build/prompts](references/build/prompts/overview.md) |
 | Pause a workflow or agent for approval, a question, or a selection; answer a paused run | [build/human-in-the-loop](references/build/human-in-the-loop/overview.md) |
 | Webhook/event triggers (Stripe, GitHub, Sentry, Slack, Standard Webhooks), `POST /v1/events`, chat bots | [build/webhooks-integrations](references/build/webhooks-integrations/overview.md) |
-| Generate a whole project from a description ("build me an agent that…") or from a template | [build/ai-templates](references/build/ai-templates/overview.md) (+ `providers.md`) |
+| Generate a whole project from a description ("build me an agent that…") or from a template — done only after `agnt5 dev` + one successful `agnt5 run` | [build/ai-templates](references/build/ai-templates/overview.md) (+ `providers.md`), then [ship/project-init](references/ship/project-init/overview.md) |
 
 ## Ship
 
 | Task | Read |
 |---|---|
-| Install/update/log in to the CLI, create or link a blank project, `.env`, `agnt5 dev`, `agnt5 run`, a worker that won't start | [ship/project-init](references/ship/project-init/overview.md) |
+| Install/update/log in to the CLI, find, create or link a project, `.env`, `agnt5 dev`, `agnt5 run`, a worker that won't start | [ship/project-init](references/ship/project-init/overview.md) |
 | Secrets and provider keys, `agnt5 deploy`, `agnt5.yaml`, what gets bundled, deploy failures, promote, roll back, scale | [ship/deploy](references/ship/deploy/overview.md) |
 | Run components as a signed HTTP endpoint (FastAPI, Express, Cloudflare, Vercel, Cloud Run), `agnt5 serverless` lifecycle, external signals | [ship/serverless](references/ship/serverless/overview.md) |
 | Call deployed components from your backend, scripts or CI: clients, service keys, run vs submit, streaming, sessions, batches, resuming a paused run | [ship/client](references/ship/client/overview.md) |

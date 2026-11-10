@@ -113,8 +113,8 @@ ignored without error — log what resolved.
 ## Go pitfalls for this guide
 
 - Skills need a `LanguageModel` that handles tool calls: the catalog is useless if the model
-  cannot call `load_skill`. Reasoning models over Chat Completions fail on tool use in Go
-  — use `gpt-4o-mini`/`gpt-4.1-mini`.
+  cannot call `load_skill`. gpt-6 models handle tool use on sdk-go v0.11.0+; on v0.10.3
+  they fail — upgrade, or use `gpt-4.1-mini`.
 - Bundled scripts only run with `WithAgentSandbox`; `NewInMemorySandbox()` stores the files but
   executes nothing, so use it only in tests.
 - `WithAgentGuidance` silently skips missing files; `WithAgentSkillsFromDir` errors on a

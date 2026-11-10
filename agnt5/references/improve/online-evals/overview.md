@@ -53,8 +53,9 @@ async def cites_order_id(ctx: ScorerContext, request: ScorerRequest) -> ScorerRe
                         explanation=f"Order ID {order_id} {'found' if cited else 'missing'}")
 ```
 
-Register it (`Worker(..., scorers=[cites_order_id])`) and deploy ([deploy](../../ship/deploy/overview.md)). The deployment
-that hosts the scorer must be a worker deployment (not serverless) in the same project. It can be
+Register it (`Worker(..., scorers=[cites_order_id])`) and deploy ([deploy](../../ship/deploy/overview.md)). Set the
+model key as a project secret first — `agnt5 secrets set --name OPENAI_API_KEY --type api_key` — since `.env`
+never ships. The deployment that hosts the scorer must be a worker deployment (not serverless) in the same project. It can be
 the deployment that serves production or a separate one. Scorer authoring details are in
 [scorers](../scorers/overview.md).
 

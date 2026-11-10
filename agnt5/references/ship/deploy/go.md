@@ -113,7 +113,7 @@ of third-party SDK calls.
   broken worker; it is the build.
 - Diagnostics written with `log.Printf` or `fmt` are invisible once deployed; use
   `ctx.Logger()`.
-- Bare model names and explicit `APIKey` are required (`"openai/gpt-4o-mini"` is a 400 in
+- Bare model names and explicit `APIKey` are required (`"openai/gpt-6-luna"` is a 400 in
   production exactly as locally).
-- Reasoning models: Go agents with tools fail on gpt-6 over Chat Completions;
-  stay on `gpt-4o-mini`/`gpt-4.1-mini` for deployed agents for now.
+- gpt-6 agents with tools need sdk-go v0.11.0+ (v0.10.3 fails with 400); leave `Temperature`
+  unset.

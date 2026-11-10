@@ -12,7 +12,7 @@ from agnt5 import lm
 from agnt5.lm import Prompt   # NOT `from agnt5 import Prompt` — that is the MCP Prompt type
 
 response = await lm.generate(
-    model="openai/gpt-4o-mini",
+    model="openai/gpt-6-luna",
     prompt=Prompt(id="support_reply", variables={"customer": {"name": "Ada"}, "topic": "shipping"}),
 )
 print(response.text)
@@ -30,8 +30,7 @@ Create `prompts/<id>.mdx` in the application repo:
 id: support_reply
 version: 3
 version_id: 018f0000-0000-7000-8000-000000000003
-model: openai/gpt-4o-mini
-temperature: 0.2
+model: openai/gpt-6-luna
 max_tokens: 600
 variables:
   - customer.name
@@ -65,7 +64,7 @@ fails closed, it does not fall back to control-plane state.
 
 ```python
 response = await lm.generate(
-    model="openai/gpt-4o-mini",
+    model="openai/gpt-6-luna",
     prompt=Prompt(id="support_reply", version="3"),
 )
 ```
@@ -108,7 +107,7 @@ result instead of re-calling the model:
 @function
 async def draft_reply(ctx: FunctionContext, customer_name: str, topic: str) -> str:
     response = await lm.generate(
-        model="openai/gpt-4o-mini",
+        model="openai/gpt-6-luna",
         prompt=Prompt(id="support_reply", variables={"customer": {"name": customer_name}, "topic": topic}),
     )
     return response.text

@@ -135,7 +135,7 @@ export const agentWithHitl = workflow(
     const agent = new Agent({
       name: 'assistant',
       model: LM.openai(),
-      modelName: 'openai/gpt-4o-mini',
+      modelName: 'openai/gpt-6-luna',
       instructions: 'Ask for clarification when ambiguous. Request approval before changes.',
       tools: [new AskUserTool(ctx as ContextImpl), new RequestApprovalTool(ctx as ContextImpl)],
     });

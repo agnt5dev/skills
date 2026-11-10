@@ -155,7 +155,7 @@ LABEL:
 
 my_agent = Agent(
     name="AgentName",
-    model="openai/gpt-4o-mini",
+    model="openai/gpt-6-luna",
     instructions=agent_prompt,
     tools=[some_tool],          # omit entirely if no tools — never pass tools=[]
 )
@@ -294,13 +294,26 @@ workflows, lower it for CPU-bound work.
    - No `functions.py` for a simple linear flow — the workflow can call agents directly.
    - No handoffs for fixed sequences — use workflow steps.
    - No HITL unless asked.
-   - Model `openai/gpt-4o-mini` unless the user names another; ask when unsure rather than
-     guessing a model name. For `openai/gpt-6*` pass `temperature=None` to `Agent` (the
-     default 0.7 is rejected with a 400) and do not use `reasoning_effort` — the native
-     binding never sends it. Details: [models](../models/overview.md).
+   - Model `openai/gpt-6-luna` unless the user names another; ask when unsure rather than
+     guessing a model name. Don't set `temperature` (gpt-6 models accept only the default) and
+     do not use `reasoning_effort` — the native binding never sends it. Details: [models](../models/overview.md).
    - Keep `prompts/` and `skills/` inside the project and out of `.gitignore`: they resolve
      against the worker's working directory and must ship in the deploy bundle.
-6. **Hand off** to [project-init](../../ship/project-init/overview.md) (`uv sync`, `.env`, `agnt5 dev`, `agnt5 run`).
+6. **Run it — the template is not done until one run succeeds.** Writing the files is half the
+   job; finish with these steps (details and errors: [project-init](../../ship/project-init/overview.md)):
+
+   ```bash
+   uv sync                               # install deps
+   agnt5 init --new --name <template_name> -y   # register + link (add --workspace <ws> if you have several; skip if already linked)
+   cp .env.example .env                  # then fill in the model key (e.g. OPENAI_API_KEY)
+   agnt5 dev -d                          # start the worker in the background
+   agnt5 run <template_name>_workflow --type workflow --input '{"...": "..."}'
+   agnt5 dev stop                        # stop the worker when done
+   ```
+
+   For the model key, check the shell environment and `.env` first. If it's missing, **ask the
+   user for it** — do not stop with "needs a key" and do not invent one. Report the real output
+   of the run, not an example.
 
 ## Source
 

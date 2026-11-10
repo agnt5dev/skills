@@ -45,6 +45,11 @@ agnt5 create my-project --workspace my-team    # pick the workspace up front
 agnt5 create my-project --local                # skip registering on AGNT5 (fully offline)
 ```
 
+**Find an existing project** (to link to it, or to check before creating a duplicate): AGNT5 MCP
+`list_projects` with `search`, or `agnt5 projects --search <name>` (`-o json` for ids). There is
+no `agnt5 project list` / `agnt5 projects list`. Two projects can share a name — link by id
+with `agnt5 init --project <project-id>`.
+
 **Already in a directory you want to become the project** — `agnt5 init` (alias `link`):
 
 ```bash

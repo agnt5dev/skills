@@ -9,9 +9,9 @@ should be versioned outside code ([prompts](../prompts/overview.md)). Every call
 
 | SDK | Form | What happens otherwise |
 |---|---|---|
-| Python | `"openai/gpt-4o-mini"` | `ValueError: Model must include provider prefix` / unknown provider |
-| TypeScript | `"openai/gpt-4o-mini"` **even with** `LM.openai()`; the prefix must match the factory (`LM.google()` takes `google/` or `gemini/`, `LM.huggingface()` takes `huggingface/` or `hf/`, `LM.openrouter()` accepts any prefix) | `ConfigurationError: Model must include provider prefix` or `Provider 'x' does not match model prefix` - the bare `'gpt-4'` examples in the `.d.ts` JSDoc are stale |
-| Go | bare `Model: "gpt-4o-mini"` on the provider config or request | `"openai/gpt-4o-mini"` is sent verbatim and the provider answers 400 invalid model ID |
+| Python | `"openai/gpt-6-luna"` | `ValueError: Model must include provider prefix` / unknown provider |
+| TypeScript | `"openai/gpt-6-luna"` **even with** `LM.openai()`; the prefix must match the factory (`LM.google()` takes `google/` or `gemini/`, `LM.huggingface()` takes `huggingface/` or `hf/`, `LM.openrouter()` accepts any prefix) | `ConfigurationError: Model must include provider prefix` or `Provider 'x' does not match model prefix` - the bare `'gpt-4'` examples in the `.d.ts` JSDoc are stale |
+| Go | bare `Model: "gpt-6-luna"` on the provider config or request | `"openai/gpt-6-luna"` is sent verbatim and the provider answers 400 invalid model ID |
 
 ## Providers and credentials
 
@@ -42,7 +42,7 @@ mistral, deepseek, xai.
 from agnt5 import lm
 
 response = await lm.generate(
-    model="openai/gpt-4o-mini",
+    model="openai/gpt-6-luna",
     system_prompt="Answer in one sentence.",
     messages=[{"role": "user", "content": question}],   # or prompt="..." for one turn
     max_tokens=200,                                      # temperature defaults to None (not sent)
@@ -54,7 +54,7 @@ print(response.text, response.usage.total_tokens)   # finish_reason is None in P
 import { LM } from '@agnt5/sdk';
 const lm = LM.openai();                                  // apiKey defaults from OPENAI_API_KEY
 const response = await lm.generate({
-  model: 'openai/gpt-4o-mini',
+  model: 'openai/gpt-6-luna',
   systemPrompt: 'Answer in one sentence.',
   messages: [{ role: 'user', content: question }],
   config: { maxOutputTokens: 200 },
@@ -63,7 +63,7 @@ console.log(response.text, response.usage?.totalTokens, response.finishReason);
 ```
 
 ```go
-model := agnt5.NewOpenAIModel(agnt5.OpenAIConfig{APIKey: os.Getenv("OPENAI_API_KEY"), Model: "gpt-4o-mini"})
+model := agnt5.NewOpenAIModel(agnt5.OpenAIConfig{APIKey: os.Getenv("OPENAI_API_KEY"), Model: "gpt-6-luna"})
 maxTokens := 200
 resp, err := ctx.Generate(model, agnt5.GenerateRequest{   // outside a handler: model.Generate(context.Background(), req)
     Messages: []agnt5.Message{
@@ -91,9 +91,11 @@ Per-language signatures, tool calling, structured output, streaming, and caching
 
 ## Model quirks (verified 29-30 Sep 2026)
 
-- **gpt-6 family accepts only `temperature` 1.** Python: `lm.generate` sends nothing unless
-  you pass it, but `Agent(...)` defaults to `temperature=0.7` - pass `temperature=None`.
-  TypeScript: set `temperature: 1` (or omit it in `config`). Go: use non-reasoning models.
+- **gpt-6 family accepts only `temperature` 1.** Python: don't pass `temperature` —
+  `Agent(...)` and `lm.generate` work with gpt-6 when it's left out (checked on SDK 0.13.8 and 0.15.2).
+  TypeScript: leave it out on `@agnt5/sdk` 0.11+ (on 0.10.x set `temperature: 1`). Go: leave
+  `Temperature` nil; on sdk-go v0.11.0 gpt-6 works including tool-using agents (v0.10.3: tool-using
+  agents fail with 400).
   Built-in judge scorers default to `temperature` 0.0, so a gpt-6 judge scores
   everything 0 - keep judges on another model ([scorers](../../improve/scorers/overview.md)).
 - **Python `reasoning_effort` is never sent** - the Rust binding has no such parameter, so the
@@ -115,7 +117,7 @@ Per-language signatures, tool calling, structured output, streaming, and caching
   cancel an in-flight model call; bound work with `maxOutputTokens` and your own timeouts.
 - **Go Anthropic sends `max_tokens: 1024` unless `MaxTokens` is set** - set it for long
   outputs. Go has no structured-output, reasoning, or built-in-tool fields.
-- **Go bare names.** `OpenAIConfig{Model: "openai/gpt-4o-mini"}` fails with 400; the Go
+- **Go bare names.** `OpenAIConfig{Model: "openai/gpt-6-luna"}` fails with 400; the Go
   constructors also do not read `OPENAI_API_KEY` - pass `APIKey` or requests go out
   unauthenticated.
 - **Google explicit context caches only**: `cache.resource` / `PromptCacheResource` raise on

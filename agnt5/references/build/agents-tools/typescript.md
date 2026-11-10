@@ -10,7 +10,7 @@ import { Agent, LM } from '@agnt5/sdk';
 export const researcher = new Agent({
   name: 'researcher',
   model: LM.openai({ apiKey: process.env.OPENAI_API_KEY }),   // provider client
-  modelName: 'openai/gpt-4o-mini',                             // provider/model string
+  modelName: 'openai/gpt-6-luna',                             // provider/model string
   instructions: 'You are a research assistant. Answer questions with cited sources.',
 });
 ```
@@ -26,7 +26,7 @@ export const researcher = new Agent({
 | `handoffs` | no | `Agent` or `handoff(...)` entries |
 | `sandbox` | no | `new Sandbox({...})` |
 | `maxIterations` | no | Default `10` |
-| `temperature` | no | Default `0.7`, sent explicitly. Omitted automatically only for `openai/gpt-5*`, `o1*`, `o3*`, `o4*`. For `gpt-6*` pass `temperature: 1` |
+| `temperature` | no | Default `0.7`, sent explicitly. Omitted automatically only for `openai/gpt-5*`, `o1*`, `o3*`, `o4*`. For `gpt-6*`: leave it out on 0.11+ (checked on 0.11.2); on 0.10.x pass `temperature: 1` |
 | `cache` | no | `true` or `{ ttl, key, retention, resource }` — see [prompts](../prompts/overview.md) |
 | `callbacks` | no | `{ beforeAgent, afterAgent, beforeModel, afterModel, beforeTool, afterTool }` |
 | `skills` / `skillsDir` / `agentsMd` | no | See [agent-skills](../agent-skills/overview.md) |
@@ -241,7 +241,7 @@ across runs.
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| OpenAI 400 "temperature not supported" on gpt-6 | agent sends `0.7` by default | `temperature: 1` on `Agent` (or `config.temperature` on `LM.generate`) |
+| OpenAI 400 "temperature not supported" on gpt-6 | `@agnt5/sdk` 0.10.x sends `0.7` by default | upgrade to 0.11+, or `temperature: 1` on `Agent` (or `config.temperature` on `LM.generate`) |
 | `result.output` is a tool's JSON after a long run | `maxIterations` hit: output = last message content | raise `maxIterations`, or detect `toolCalls.length` and re-prompt |
 | Model never fills tool arguments | no `inputSchema` | always pass `inputSchema` |
 | Coordinator calls `ask_researcher` and fails | agent-as-tool is named `researcher` | use `<agent.name>` in instructions |

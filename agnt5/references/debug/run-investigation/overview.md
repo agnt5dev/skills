@@ -261,6 +261,16 @@ input data, or external dependency. Label each claim:
 - **Correlated** — co-occurs, but you have not shown it causes the failure.
 - **Inferred cause** — your explanation, with the reasoning that links observations to it.
 
+Common configuration causes and their fix — use these directly, no need to search other pages:
+
+- **`ModuleNotFoundError` / `ImportError` / `Cannot find module`** in a deployed run: the package
+  is missing from the project's dependency manifest, so the deployment's install step never
+  installed it. Fix: add it (`uv add <pkg>` for Python, `npm i <pkg>` for TypeScript, `go get`
+  for Go), confirm locally with `agnt5 dev` + `agnt5 run`, then redeploy. What gets bundled:
+  [deploy](../../ship/deploy/overview.md) ("`agnt5.yaml` and what gets bundled").
+- **A missing environment variable or API key**: set it with `agnt5 secrets set` and redeploy;
+  `.env` never ships. See [deploy](../../ship/deploy/overview.md) ("Secrets and AI provider credentials").
+
 If the evidence does not support a confident root cause, say what is missing (e.g. "tool
 input not captured in the event", "no logs around the external call") and what instrumentation
 would make the next occurrence diagnosable. Do not invent a cause to fill the gap.

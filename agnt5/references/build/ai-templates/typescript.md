@@ -89,8 +89,8 @@ import { myTool } from './tools.js';   // only if the agent uses custom tools
 export const myAgent = new Agent({
     name: 'AgentName',
     model: LM.openai({ apiKey: process.env.OPENAI_API_KEY }),
-    modelName: 'openai/gpt-4o-mini',
-    // temperature: 1,   // required for openai/gpt-6-* models: the SDK otherwise sends 0.7 and OpenAI returns 400
+    modelName: 'openai/gpt-6-luna',
+    // no temperature for gpt-6 on @agnt5/sdk 0.11+; on 0.10.x add `temperature: 1` (0.10 sends 0.7 and OpenAI returns 400)
     instructions: 'You are <AgentName>, <one-line role>...',
     tools: [myTool],     // omit entirely if no tools — never pass tools: []
 });

@@ -7,7 +7,7 @@ Verified against github.com/agnt5dev/sdk-go v0.10.3 (`agnt5/lm.go`, `lm_http.go`
 
 There is no `"provider/model"` dispatch. Each provider is a constructor returning a
 `LanguageModel` (`Generate(ctx context.Context, req GenerateRequest) (GenerateResponse, error)`).
-Model names are **bare** (`"gpt-4o-mini"`, `"claude-sonnet-5"`) and `APIKey` is explicit -
+Model names are **bare** (`"gpt-6-luna"`, `"claude-sonnet-5"`) and `APIKey` is explicit -
 nothing reads the environment for you.
 
 | Constructor | Config | Defaults |
@@ -114,8 +114,8 @@ model from `config.model` and resolve keys from `OPENAI_API_KEY`, `ANTHROPIC_API
 
 ## Quirks
 
-- gpt-6 models are not usable from Go SDK v0.10.3 (it has no temperature or reasoning handling
-  for them); use non-reasoning models.
+- gpt-6 models: leave `Temperature` nil. On sdk-go v0.11.0 they work for `Generate` and for
+  agents with tools (checked). On v0.10.3 tool-using gpt-6 agents fail with 400 — upgrade.
 - Anthropic `max_tokens` defaults to 1024; set `MaxTokens` for long answers.
 - `Temperature`/`MaxTokens` are pointers; nil means "not sent".
 - Explicit context caches (`PromptCacheResource`) error on non-Google models;

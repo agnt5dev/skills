@@ -81,7 +81,7 @@ func must(err error) {
 
 func main() {
     model := agnt5.NewOpenAIModel(agnt5.OpenAIConfig{
-        Model:  "gpt-4o-mini",                  // bare name — never "openai/gpt-4o-mini"
+        Model:  "gpt-6-luna",                   // bare name — never "openai/gpt-6-luna"
         APIKey: os.Getenv("OPENAI_API_KEY"),    // not read from the environment automatically
     })
     if err := <package_name>.NewAgents(model); err != nil {
@@ -257,16 +257,14 @@ Bare model names, explicit keys:
 
 Not in Go: Bedrock, Hugging Face, Fireworks constructors (use `NewOpenAIModel` with `BaseURL`
 for OpenAI-compatible endpoints). Only the Google model strips a `google/`/`gemini/` prefix;
-every other provider sends the string verbatim, so `"openai/gpt-4o-mini"` is a 400
+every other provider sends the string verbatim, so `"openai/gpt-6-luna"` is a 400
 `invalid model ID`.
 
 Warnings:
 
-- Default to `gpt-4o-mini` (or `gpt-4.1-mini`). gpt-6 / reasoning models: tool-using agents fail
-  over Chat Completions without `reasoning_effort`, which Go cannot set; an
-  agent-level `Temperature`/`MaxTokens` would be rejected anyway (fix not yet released); product
-  decision pending. Workaround if the user insists: an `OpenAIConfig.HTTPClient`
-  whose `Transport` rewrites the JSON body.
+- Default to `gpt-6-luna` on sdk-go v0.11.0+ (tool-using agents work; checked). Leave
+  `Temperature` unset. On v0.10.3 tool-using gpt-6 agents fail with 400 — upgrade, or use
+  `gpt-4.1-mini` there.
 - The Anthropic provider always sends `max_tokens: 1024` unless a `GenerateRequest` sets
   `MaxTokens`; agents cannot, so Anthropic-backed agent replies are capped at 1024 tokens.
   Wrap the model (a type whose `Generate` sets `request.MaxTokens` then delegates) when longer

@@ -1,7 +1,7 @@
 # TypeScript templates
 
-Verified against `@agnt5/sdk` **0.10.5**. Check the current version first:
-`npm view @agnt5/sdk version`. For the full API mapping read
+Verified against `@agnt5/sdk` **0.10.5**; new templates pin **^0.11.2** (checked end to end with
+`openai/gpt-6-luna` and no temperature). For the full API mapping read
 [workflows/typescript.md](../workflows/typescript.md), [agents-tools/typescript.md](../agents-tools/typescript.md) and [human-in-the-loop/typescript.md](../human-in-the-loop/typescript.md).
 
 ## Layout
@@ -31,7 +31,7 @@ Verified against `@agnt5/sdk` **0.10.5**. Check the current version first:
   "private": true,
   "engines": { "node": ">=22" },
   "scripts": { "start": "npx tsx app.ts", "typecheck": "tsc --noEmit" },
-  "dependencies": { "@agnt5/sdk": "^0.10.5" },
+  "dependencies": { "@agnt5/sdk": "^0.11.2" },
   "devDependencies": { "@types/node": "^22.0.0", "tsx": "^4.21.0", "typescript": "^5.9.3" }
 }
 ```
@@ -90,7 +90,7 @@ export const myAgent = new Agent({
     name: 'AgentName',
     model: LM.openai({ apiKey: process.env.OPENAI_API_KEY }),
     modelName: 'openai/gpt-6-luna',
-    // no temperature for gpt-6 on @agnt5/sdk 0.11+; on 0.10.x add `temperature: 1` (0.10 sends 0.7 and OpenAI returns 400)
+    // no temperature for gpt-6 (needs @agnt5/sdk 0.11+, as pinned above; 0.10.x sends 0.7 and OpenAI returns 400)
     instructions: 'You are <AgentName>, <one-line role>...',
     tools: [myTool],     // omit entirely if no tools — never pass tools: []
 });

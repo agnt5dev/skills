@@ -1,0 +1,12 @@
+{
+  "name": "agnt5-skills-validation",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "validate": "node scripts/validate-skills.mjs",
+    "test": "node --test scripts/validate-skills.test.mjs"
+  },
+  "devDependencies": {
+    "yaml": "2.9.1"
+  }
+}
